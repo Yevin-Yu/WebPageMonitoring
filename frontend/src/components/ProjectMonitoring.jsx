@@ -1,15 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import EventList from './EventList';
 import RealtimeDashboard from './RealtimeDashboard';
-import UserPaths from './Analytics/UserPaths';
-import ConversionFunnel from './Analytics/ConversionFunnel';
-import RegionStats from './Analytics/RegionStats';
-import WebVitals from './Analytics/WebVitals';
-import DeviceBrowserStats from './Analytics/DeviceBrowserStats';
-import ErrorAnalysis from './Analytics/ErrorAnalysis';
 import { useProjects } from '../hooks/useProjects';
-import { TIME_RANGES } from '../utils/constants';
+import ProjectSelector from './common/ProjectSelector';
 
 function ProjectMonitoring() {
   const { projects, loading, error } = useProjects();
@@ -23,20 +17,10 @@ function ProjectMonitoring() {
     }
   }, [projects, selectedProjectKey]);
 
-  const handleProjectChange = (e) => {
-    setSelectedProjectKey(e.target.value);
-    // 切换项目时重置到数据概览标签页
+  const handleProjectChange = (projectKey) => {
+    setSelectedProjectKey(projectKey);
     setActiveTab('dashboard');
   };
-
-  const timeRangeData = useMemo(() => {
-    const now = new Date();
-    const timeRangeConfig = TIME_RANGES[timeRange];
-    const startTime = timeRangeConfig
-      ? new Date(now.getTime() - timeRangeConfig.value).toISOString()
-      : null;
-    return { startTime, endTime: now.toISOString() };
-  }, [timeRange]);
 
   if (loading) {
     return <div className="loading">加载中...</div>;
@@ -53,33 +37,28 @@ function ProjectMonitoring() {
   const selectedProject = projects.find(p => p.key === selectedProjectKey);
 
   return (
-    <div>
+    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-          <h2 className="card-title" style={{ marginBottom: 0 }}>项目监控</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <label style={{ fontSize: '0.875rem', color: '#666', fontWeight: 400 }}>选择项目:</label>
-            <select
-              className="form-input"
-              value={selectedProjectKey}
-              onChange={handleProjectChange}
-              style={{ width: 'auto', minWidth: '250px', cursor: 'pointer' }}
-            >
-              {projects.map((project) => (
-                <option key={project.key} value={project.key}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h2 className="card-title" style={{ marginBottom: '1rem' }}>项目监控</h2>
+          <ProjectSelector
+            projects={projects}
+            selectedKey={selectedProjectKey}
+            onChange={handleProjectChange}
+          />
         </div>
 
         {selectedProject && (
-          <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '8px', border: '1px solid #d0d0d0' }}>
+          <div style={{
+            padding: '1rem',
+            background: 'rgba(0, 0, 0, 0.02)',
+            borderRadius: '6px',
+            border: '1px solid rgba(0, 0, 0, 0.08)'
+          }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>项目名称</div>
-                <div style={{ fontSize: '0.875rem', color: '#333', fontWeight: 500 }}>{selectedProject.name}</div>
+                <div style={{ fontSize: '0.875rem', color: '#1a1a1a', fontWeight: 500 }}>{selectedProject.name}</div>
               </div>
               {selectedProject.description && (
                 <div>
@@ -89,9 +68,9 @@ function ProjectMonitoring() {
               )}
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>项目 Key</div>
-                <code style={{ 
-                  background: '#e0e0e0', 
-                  padding: '0.25rem 0.5rem', 
+                <code style={{
+                  background: 'rgba(0, 0, 0, 0.06)',
+                  padding: '0.25rem 0.5rem',
                   borderRadius: '4px',
                   fontSize: '0.875rem',
                   fontFamily: 'monospace',
@@ -106,7 +85,7 @@ function ProjectMonitoring() {
       </div>
 
       {selectedProjectKey && (
-        <div className="card">
+        <div className="card" style={{ overflowX: 'hidden' }}>
           <div className="tabs">
             <button
               className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -119,12 +98,6 @@ function ProjectMonitoring() {
               onClick={() => setActiveTab('realtime')}
             >
               实时监控
-            </button>
-            <button
-              className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analytics')}
-            >
-              行为分析
             </button>
             <button
               className={`tab ${activeTab === 'events' ? 'active' : ''}`}
@@ -162,35 +135,6 @@ function ProjectMonitoring() {
             </div>
           )}
           {activeTab === 'realtime' && <RealtimeDashboard projectKey={selectedProjectKey} />}
-          {activeTab === 'analytics' && (
-            <div>
-              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <div className="time-range-selector">
-                  <button
-                    className={`time-btn ${timeRange === '24h' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('24h')}
-                  >
-                    24小时
-                  </button>
-                  <button
-                    className={`time-btn ${timeRange === '7d' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('7d')}
-                  >
-                    7天
-                  </button>
-                  <button
-                    className={`time-btn ${timeRange === '30d' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('30d')}
-                  >
-                    30天
-                  </button>
-                </div>
-              </div>
-              <UserPaths projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
-              <ConversionFunnel projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
-              <RegionStats projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
-            </div>
-          )}
           {activeTab === 'events' && <EventList projectKey={selectedProjectKey} />}
         </div>
       )}
@@ -207,4 +151,3 @@ function ProjectMonitoring() {
 }
 
 export default ProjectMonitoring;
-

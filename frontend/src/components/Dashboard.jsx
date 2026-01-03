@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { LineChart } from './Charts/LineChart';
 import { PieChart } from './Charts/PieChart';
 import { BarChart } from './Charts/BarChart';
@@ -6,6 +7,7 @@ import WebVitals from './Analytics/WebVitals';
 import DeviceBrowserStats from './Analytics/DeviceBrowserStats';
 import ErrorAnalysis from './Analytics/ErrorAnalysis';
 import { useStats } from '../hooks/useStats';
+import { TIME_RANGES, CHART_CONFIG, UI_TEXT } from '../utils/constants';
 
 function Dashboard({ projectKey, timeRange: timeRangeProp }) {
   const [internalTimeRange, setInternalTimeRange] = useState('24h');
@@ -30,7 +32,7 @@ function Dashboard({ projectKey, timeRange: timeRangeProp }) {
   }, [stats?.topPages]);
 
   if (loading) {
-    return <div className="loading">加载中...</div>;
+    return <div className="loading">{UI_TEXT.LOADING}</div>;
   }
 
   if (error) {
@@ -38,7 +40,7 @@ function Dashboard({ projectKey, timeRange: timeRangeProp }) {
       <div className="card">
         <div className="error">{error}</div>
         <button className="btn btn-primary" onClick={refetch} style={{ marginTop: '1rem' }}>
-          重试
+          {UI_TEXT.RETRY}
         </button>
       </div>
     );
@@ -134,7 +136,7 @@ function Dashboard({ projectKey, timeRange: timeRangeProp }) {
             title=""
             xKey="time"
             yKeys={['pageviews', 'clicks', 'errors']}
-            colors={['#1a1a1a', '#666', '#8b0000']}
+            colors={[CHART_CONFIG.COLORS.PRIMARY, CHART_CONFIG.COLORS.SECONDARY, CHART_CONFIG.COLORS.DANGER]}
           />
         </div>
       )}
@@ -144,7 +146,7 @@ function Dashboard({ projectKey, timeRange: timeRangeProp }) {
           <PieChart data={eventTypeData} title="事件类型分布" />
         </div>
         <div className="chart-card">
-          <BarChart data={topPagesData} title="热门页面 TOP 10" />
+          <BarChart data={topPagesData} title={`热门页面 TOP ${topPagesData.length}`} />
         </div>
       </div>
 
@@ -167,43 +169,59 @@ function Dashboard({ projectKey, timeRange: timeRangeProp }) {
       {stats.topPages && stats.topPages.length > 0 && (
         <div className="table-card">
           <h3 className="table-title">热门页面详情</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>排名</th>
-                <th>页面标题</th>
-                <th>页面 URL</th>
-                <th>访问次数</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.topPages.map((page, index) => (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  <td>{page.page_title || '-'}</td>
-                  <td>
-                    {page.page_url ? (
-                      <a
-                        href={page.page_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="table-link"
-                      >
-                        {page.page_url}
-                      </a>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td>{page.count}</td>
+          <div style={{ 
+            overflowX: 'auto', 
+            overflowY: 'auto', 
+            maxHeight: '400px',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            <table className="data-table">
+              <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+                <tr>
+                  <th>排名</th>
+                  <th>页面标题</th>
+                  <th>页面 URL</th>
+                  <th>访问次数</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.topPages.map((page, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{page.page_title || '-'}</td>
+                    <td>
+                      {page.page_url ? (
+                        <a
+                          href={page.page_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="table-link"
+                        >
+                          {page.page_url}
+                        </a>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td>{page.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+Dashboard.propTypes = {
+  projectKey: PropTypes.string.isRequired,
+  timeRange: PropTypes.oneOf(['24h', '7d', '30d']),
+};
+
+Dashboard.defaultProps = {
+  timeRange: undefined,
+};
 
 export default Dashboard;

@@ -1,13 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { analyticsAPI } from '../api/analytics';
 import { LineChart } from './Charts/LineChart';
 import { getErrorMessage } from '../utils/errorHandler';
 import { REALTIME_INTERVAL } from '../utils/constants';
 
+/**
+ * 实时监控面板组件
+ * @param {string} projectKey - 项目 Key
+ */
 function RealtimeDashboard({ projectKey }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const loadStats = useCallback(async () => {
+    if (!projectKey) return;
+
+    try {
+      setError(null);
+      const response = await analyticsAPI.getRealtimeStats(projectKey, 30);
+      if (!response?.data) {
+        throw new Error('返回数据格式错误');
+      }
+      setStats(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError(getErrorMessage(err));
+      setLoading(false);
+    }
+  }, [projectKey]);
 
   useEffect(() => {
     if (projectKey) {
@@ -15,23 +36,7 @@ function RealtimeDashboard({ projectKey }) {
       const interval = setInterval(loadStats, REALTIME_INTERVAL);
       return () => clearInterval(interval);
     }
-  }, [projectKey]);
-
-  const loadStats = async () => {
-    try {
-      setError(null);
-      const response = await analyticsAPI.getRealtimeStats(projectKey, 30);
-      if (!response || !response.data) {
-        throw new Error('返回数据格式错误');
-      }
-      setStats(response.data);
-      setLoading(false);
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      setLoading(false);
-    }
-  };
+  }, [projectKey, loadStats]);
 
   if (loading && !stats) {
     return <div className="loading">加载中...</div>;

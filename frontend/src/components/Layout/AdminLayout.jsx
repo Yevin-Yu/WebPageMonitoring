@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export function AdminLayout({ children }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   return (
     <div className="admin-layout">
       <Sidebar />
@@ -17,3 +16,7 @@ export function AdminLayout({ children }) {
     </div>
   );
 }
+
+AdminLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};

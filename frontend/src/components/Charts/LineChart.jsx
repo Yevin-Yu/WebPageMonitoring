@@ -1,11 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import ReactECharts from 'echarts-for-react';
+import { CHART_CONFIG, UI_TEXT } from '../../utils/constants';
 
-export function LineChart({ data, title, xKey = 'time', yKeys = ['value'], colors = ['#1a1a1a', '#666', '#999'] }) {
+export function LineChart({ data, title, xKey, yKeys, colors }) {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return (
-      <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
-        暂无数据
+      <div style={{ height: `${CHART_CONFIG.HEIGHT.DEFAULT}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+        {UI_TEXT.NO_DATA}
       </div>
     );
   }
@@ -70,7 +72,22 @@ export function LineChart({ data, title, xKey = 'time', yKeys = ['value'], color
     series,
   };
 
-  return <ReactECharts option={option} style={{ height: '300px' }} />;
+  return <ReactECharts option={option} style={{ height: `${CHART_CONFIG.HEIGHT.DEFAULT}px` }} />;
 }
+
+LineChart.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+  title: PropTypes.string,
+  xKey: PropTypes.string,
+  yKeys: PropTypes.arrayOf(PropTypes.string),
+  colors: PropTypes.arrayOf(PropTypes.string),
+};
+
+LineChart.defaultProps = {
+  title: '',
+  xKey: 'time',
+  yKeys: ['value'],
+  colors: [CHART_CONFIG.COLORS.PRIMARY, CHART_CONFIG.COLORS.SECONDARY, CHART_CONFIG.COLORS.TERTIARY],
+};
 
 

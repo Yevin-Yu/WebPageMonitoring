@@ -15,6 +15,10 @@ const analyticsRoutes = require('./routes/analytics');
 
 const logger = createLogger('App');
 
+/**
+ * 创建 Express 应用实例
+ * @returns {express.Application} Express 应用
+ */
 function createApp() {
   const app = express();
 
@@ -25,6 +29,10 @@ function createApp() {
   return app;
 }
 
+/**
+ * 配置中间件
+ * @param {express.Application} app - Express 应用实例
+ */
 function setupMiddleware(app) {
   app.use(helmet({
     contentSecurityPolicy: false,
@@ -48,6 +56,10 @@ function setupMiddleware(app) {
   });
 }
 
+/**
+ * 配置路由
+ * @param {express.Application} app - Express 应用实例
+ */
 function setupRoutes(app) {
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -60,6 +72,10 @@ function setupRoutes(app) {
   app.use('/api/analytics', analyticsRoutes);
 }
 
+/**
+ * 配置错误处理
+ * @param {express.Application} app - Express 应用实例
+ */
 function setupErrorHandling(app) {
   app.use(errorHandler);
 }

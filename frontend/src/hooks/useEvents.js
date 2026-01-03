@@ -3,7 +3,7 @@ import { eventsAPI } from '../api/events';
 import { getErrorMessage } from '../utils/errorHandler';
 
 export function useEvents(projectKey, options = {}) {
-  const { type, page = 1, pageSize = 50 } = options;
+  const { type, page = 1, pageSize = 20 } = options;
   const [events, setEvents] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);

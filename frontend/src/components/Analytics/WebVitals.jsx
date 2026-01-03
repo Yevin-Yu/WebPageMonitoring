@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Web Vitals 性能指标组件
+ * @param {Object} webVitals - Web Vitals 数据
+ */
 function WebVitals({ webVitals }) {
   if (!webVitals) {
     return (

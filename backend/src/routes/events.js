@@ -46,7 +46,7 @@ router.post('/', asyncHandler(async (req, res) => {
  * 获取事件列表（需要认证）
  */
 router.get('/', authenticateToken, asyncHandler(async (req, res) => {
-  const { projectKey, type, startTime, endTime, page = 1, pageSize = 50 } = req.query;
+  const { projectKey, type, startTime, endTime, page = 1, pageSize = 20 } = req.query;
 
   if (!projectKey) {
     return res.status(400).json({ error: '缺少 projectKey 参数' });

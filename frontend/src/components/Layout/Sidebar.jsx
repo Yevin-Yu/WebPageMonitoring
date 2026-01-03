@@ -6,6 +6,9 @@ const menuItems = [
   { path: '/monitoring', label: '项目监控', icon: '📈' },
 ];
 
+/**
+ * 侧边栏导航组件
+ */
 export function Sidebar() {
   const location = useLocation();
   const isProjectDetail = location.pathname.startsWith('/projects/');

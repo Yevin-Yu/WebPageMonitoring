@@ -5,6 +5,9 @@ const { createLogger } = require('./utils/logger');
 
 const logger = createLogger('Server');
 
+/**
+ * 启动服务器
+ */
 async function startServer() {
   try {
     initDatabase();

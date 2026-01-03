@@ -2,6 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * 页面头部组件
+ * 显示标题和用户信息
+ */
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -14,7 +18,7 @@ export function Header() {
   return (
     <header className="admin-header">
       <div className="header-left">
-        <h1 className="header-title">前端页面监控</h1>
+        <h1 className="header-title">前端统计</h1>
       </div>
       <div className="header-right">
         {user && (

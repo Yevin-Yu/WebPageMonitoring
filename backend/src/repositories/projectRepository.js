@@ -8,6 +8,10 @@ const logger = createLogger('ProjectRepository');
 const DATA_DIR = path.join(__dirname, '../../data');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.csv');
 
+/**
+ * 读取所有项目数据
+ * @returns {Array} 项目数组
+ */
 function readProjects() {
   try {
     if (!fs.existsSync(PROJECTS_FILE)) {
@@ -55,6 +59,10 @@ function readProjects() {
   }
 }
 
+/**
+ * 写入项目数据到 CSV 文件
+ * @param {Array} projects - 项目数组
+ */
 function writeProjects(projects) {
   try {
     if (!Array.isArray(projects)) {

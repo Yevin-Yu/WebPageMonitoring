@@ -28,7 +28,7 @@ export const EVENT_TYPES = {
 // 分页配置
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
-  DEFAULT_PAGE_SIZE: 50,
+  DEFAULT_PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 1000,
 };
 
@@ -80,12 +80,47 @@ export const WEB_VITALS_THRESHOLDS = {
   TTFB: { good: 800, needsImprovement: 1800 },
 };
 
+// 图表配置
+export const CHART_CONFIG = {
+  COLORS: {
+    PRIMARY: '#1a1a1a',
+    SECONDARY: '#666',
+    TERTIARY: '#999',
+    DANGER: '#8b0000',
+    SUCCESS: '#28a745',
+    WARNING: '#ffc107',
+  },
+  HEIGHT: {
+    DEFAULT: 300,
+    COMPACT: 200,
+    TALL: 400,
+  },
+};
+
 // 实时更新间隔
-export const REALTIME_INTERVAL = 10000; // 10秒
+export const REALTIME_INTERVAL = 10000;
 
 // 防抖延迟
 export const DEBOUNCE_DELAY = 300;
 
 // 节流间隔
 export const THROTTLE_INTERVAL = 1000;
+
+// UI 文本
+export const UI_TEXT = {
+  LOADING: '加载中...',
+  NO_DATA: '暂无数据',
+  ERROR: '出现错误',
+  RETRY: '重试',
+  SUBMIT: '提交',
+  CANCEL: '取消',
+};
+
+// 路由路径
+export const ROUTES = {
+  LOGIN: '/login',
+  HOME: '/',
+  MONITORING: '/monitoring',
+  PROJECT_DETAIL: '/projects/:projectKey',
+};
 

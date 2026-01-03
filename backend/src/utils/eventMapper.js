@@ -40,6 +40,13 @@ function clampNumber(value, min, max) {
   return Math.max(min, Math.min(max, num));
 }
 
+/**
+ * 将事件对象映射为 CSV 记录格式
+ * @param {Object} event - 原始事件对象
+ * @param {string} projectKey - 项目 Key
+ * @param {number} newId - 新的事件 ID
+ * @returns {Object} 格式化后的事件记录
+ */
 function mapEventToRecord(event, projectKey, newId) {
   const page = event.page || {};
   const user = event.user || {};

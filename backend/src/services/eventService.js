@@ -5,6 +5,12 @@ const { createLogger } = require('../utils/logger');
 const logger = createLogger('EventService');
 const MAX_BATCH_SIZE = 1000;
 
+/**
+ * 保存事件数据
+ * @param {string} projectKey - 项目 Key
+ * @param {Array} events - 事件数组
+ * @returns {Promise<number>} 成功保存的事件数量
+ */
 async function saveEvent(projectKey, events) {
   if (!projectKey || typeof projectKey !== 'string') {
     throw new Error('项目Key无效');
@@ -47,8 +53,16 @@ async function saveEvent(projectKey, events) {
 
 /**
  * 获取事件列表
+ * @param {Object} options - 查询选项
+ * @param {string} options.projectKey - 项目 Key
+ * @param {string} [options.type] - 事件类型筛选
+ * @param {string} [options.startTime] - 开始时间
+ * @param {string} [options.endTime] - 结束时间
+ * @param {number} [options.page=1] - 页码
+ * @param {number} [options.pageSize=20] - 每页数量
+ * @returns {Promise<Object>} 事件列表和分页信息
  */
-async function getEvents({ projectKey, type, startTime, endTime, page = 1, pageSize = 50 }) {
+async function getEvents({ projectKey, type, startTime, endTime, page = 1, pageSize = 20 }) {
   try {
     if (!projectKey) {
       throw new Error('项目Key不能为空');
@@ -56,7 +70,7 @@ async function getEvents({ projectKey, type, startTime, endTime, page = 1, pageS
 
     // 验证分页参数
     const validatedPage = Math.max(1, parseInt(page) || 1);
-    const validatedPageSize = Math.min(100, Math.max(1, parseInt(pageSize) || 50));
+    const validatedPageSize = Math.min(100, Math.max(1, parseInt(pageSize) || 20));
 
     let events = readEvents();
 
@@ -117,34 +131,56 @@ async function getEvents({ projectKey, type, startTime, endTime, page = 1, pageS
   }
 }
 
+/**
+ * 获取项目统计数据
+ * @param {string} projectKey - 项目 Key
+ * @param {string} [startTime] - 开始时间
+ * @param {string} [endTime] - 结束时间
+ * @returns {Promise<Object>} 统计数据
+ */
 async function getProjectStats(projectKey, startTime, endTime) {
   const { extractWebVitals, extractDeviceStats, aggregateErrors, calculateTimeTrend } = require('../utils/statsCalculator');
   
-  const events = readEvents();
+  const allEvents = readEvents();
 
-  events = events.filter(event => {
+  const events = allEvents.filter(event => {
     if (event.project_key !== projectKey) return false;
     if (startTime && event.timestamp < startTime) return false;
     if (endTime && event.timestamp > endTime) return false;
     return true;
   });
 
+  // 对页面访问进行去重：同一时间（精确到秒）、同一IP、同一页面只统计一次
+  const pageviewEvents = events.filter(e => e.type === 'pageview');
+  const uniquePageviews = new Set();
+  const pageCounts = {};
+
+  pageviewEvents.forEach(event => {
+    // 生成唯一键：时间戳(精确到秒)_IP_页面URL
+    const timestamp = new Date(event.timestamp);
+    const timeKey = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')} ${String(timestamp.getHours()).padStart(2, '0')}:${String(timestamp.getMinutes()).padStart(2, '0')}:${String(timestamp.getSeconds()).padStart(2, '0')}`;
+    const ip = event.user_ip || 'unknown';
+    const pageUrl = event.page_url || '';
+    const uniqueKey = `${timeKey}_${ip}_${pageUrl}`;
+    
+    // 只统计第一次出现的组合
+    if (!uniquePageviews.has(uniqueKey)) {
+      uniquePageviews.add(uniqueKey);
+      
+      // 统计热门页面
+      const pageKey = `${event.page_url}|||${event.page_title || ''}`;
+      pageCounts[pageKey] = (pageCounts[pageKey] || 0) + 1;
+    }
+  });
+
   const stats = {
     total_events: events.length,
     unique_visitors: new Set(events.map(e => e.user_ip).filter(ip => ip)).size,
     unique_pages: new Set(events.map(e => e.page_url).filter(url => url)).size,
-    pageviews: events.filter(e => e.type === 'pageview').length,
-    clicks: events.filter(e => e.type === 'click').length,
-    errors: events.filter(e => e.type === 'error').length,
+    pageviews: uniquePageviews.size, // 使用去重后的数量
+    clicks: 0, // 不再统计点击事件
+    errors: 0, // 不再统计错误事件
   };
-
-  const pageviewEvents = events.filter(e => e.type === 'pageview');
-  const pageCounts = {};
-
-  pageviewEvents.forEach(event => {
-    const key = `${event.page_url}|||${event.page_title || ''}`;
-    pageCounts[key] = (pageCounts[key] || 0) + 1;
-  });
 
   const topPages = Object.entries(pageCounts)
     .map(([key, count]) => {
@@ -154,16 +190,38 @@ async function getProjectStats(projectKey, startTime, endTime) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  // 对页面访问事件进行去重后提取 Web Vitals
+  const uniquePageviewEvents = [];
+  const uniqueKeys = new Set();
+  pageviewEvents.forEach(event => {
+    const timestamp = new Date(event.timestamp);
+    const timeKey = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')} ${String(timestamp.getHours()).padStart(2, '0')}:${String(timestamp.getMinutes()).padStart(2, '0')}:${String(timestamp.getSeconds()).padStart(2, '0')}`;
+    const ip = event.user_ip || 'unknown';
+    const pageUrl = event.page_url || '';
+    const uniqueKey = `${timeKey}_${ip}_${pageUrl}`;
+    if (!uniqueKeys.has(uniqueKey)) {
+      uniqueKeys.add(uniqueKey);
+      uniquePageviewEvents.push(event);
+    }
+  });
+
   return {
     ...stats,
     topPages,
-    webVitals: extractWebVitals(pageviewEvents),
+    webVitals: extractWebVitals(uniquePageviewEvents),
     ...extractDeviceStats(events),
-    topErrors: aggregateErrors(events),
+    topErrors: [], // 不再统计错误
     timeTrend: calculateTimeTrend(events),
   };
 }
 
+/**
+ * 获取事件类型统计
+ * @param {string} projectKey - 项目 Key
+ * @param {string} [startTime] - 开始时间
+ * @param {string} [endTime] - 结束时间
+ * @returns {Promise<Array>} 事件类型统计数组
+ */
 async function getEventStats(projectKey, startTime, endTime) {
   const events = readEvents().filter(event => {
     if (event.project_key !== projectKey) return false;

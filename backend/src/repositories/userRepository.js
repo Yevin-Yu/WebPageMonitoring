@@ -8,6 +8,10 @@ const logger = createLogger('UserRepository');
 const DATA_DIR = path.join(__dirname, '../../data');
 const USERS_FILE = path.join(DATA_DIR, 'users.csv');
 
+/**
+ * 读取所有用户数据
+ * @returns {Array} 用户数组
+ */
 function readUsers() {
   try {
     if (!fs.existsSync(USERS_FILE)) {

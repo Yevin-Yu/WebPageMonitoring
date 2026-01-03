@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * 错误分析组件
+ * @param {Array} topErrors - 错误数组
+ */
 function ErrorAnalysis({ topErrors }) {
   if (!topErrors || topErrors.length === 0) {
     return (

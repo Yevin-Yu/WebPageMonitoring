@@ -1,40 +1,29 @@
 import axios from 'axios';
-
-const API_BASE = '/api';
+import { storage } from '../utils/storage';
+import { API_CONFIG } from '../utils/constants';
 
 const client = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_CONFIG.BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30秒超时
+  timeout: API_CONFIG.TIMEOUT,
 });
 
-// 请求拦截器：添加认证 token
 client.interceptors.request.use(
   (config) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    } catch (error) {
-      return Promise.reject(error);
+    const token = storage.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// 响应拦截器：处理错误
 client.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // 处理网络错误
     if (!error.response) {
       if (error.code === 'ECONNABORTED') {
         error.message = '请求超时，请稍后重试';
@@ -43,11 +32,8 @@ client.interceptors.response.use(
       }
     }
 
-    // 处理认证错误
     if (error.response?.status === 401 || error.response?.status === 403) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // 延迟跳转，避免在错误处理中立即跳转
+      storage.clearAuth();
       setTimeout(() => {
         window.location.href = '/login';
       }, 100);

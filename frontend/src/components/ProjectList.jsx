@@ -5,7 +5,7 @@ import { getErrorMessage } from '../utils/errorHandler';
 import { useProjects } from '../hooks/useProjects';
 
 function ProjectList() {
-  const { projects, loading, error, refetch } = useProjects();
+  const { projects, loading, error, refetch, addProject } = useProjects();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [submitError, setSubmitError] = useState(null);
@@ -14,8 +14,7 @@ function ProjectList() {
     e.preventDefault();
     setSubmitError(null);
 
-    // 客户端验证
-    if (!formData.name || formData.name.trim().length === 0) {
+    if (!formData.name?.trim()) {
       setSubmitError('项目名称不能为空');
       return;
     }
@@ -27,18 +26,15 @@ function ProjectList() {
 
     try {
       const response = await projectsAPI.create(formData.name.trim(), (formData.description || '').trim());
-      
-      if (!response || !response.data) {
+      if (!response?.data) {
         throw new Error('创建项目返回数据格式错误');
       }
 
-      setProjects([response.data, ...projects]);
+      addProject(response.data);
       setFormData({ name: '', description: '' });
       setShowForm(false);
-      setSubmitError(null);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setSubmitError(errorMessage);
+      setSubmitError(getErrorMessage(error));
     }
   };
 
@@ -60,8 +56,8 @@ function ProjectList() {
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 className="card-title">项目管理</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? '1rem' : '0' }}>
+          <h2 className="card-title" style={{ marginBottom: 0 }}>项目管理</h2>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             {showForm ? '取消' : '创建新项目'}
           </button>
@@ -71,14 +67,14 @@ function ProjectList() {
           <form 
             onSubmit={handleSubmit} 
             className="form-expand"
-            style={{ marginBottom: '2rem', padding: '1.5rem 0', borderTop: '1px solid rgba(0, 0, 0, 0.08)', borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}
+            style={{ marginTop: '1rem', marginBottom: '0', padding: '1rem 0', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}
           >
             {submitError && (
-              <div className="error" style={{ marginBottom: '1rem' }}>
+              <div className="error" style={{ marginBottom: '0.75rem' }}>
                 {submitError}
               </div>
             )}
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '0.875rem' }}>
               <label className="form-label">项目名称 *</label>
               <input
                 type="text"
@@ -92,7 +88,7 @@ function ProjectList() {
                 required
               />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '0.875rem' }}>
               <label className="form-label">项目描述</label>
               <textarea
                 className="form-textarea"
@@ -101,7 +97,7 @@ function ProjectList() {
                 maxLength={500}
               />
             </div>
-            <button type="submit" className="btn btn-primary">创建项目</button>
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.25rem' }}>创建项目</button>
           </form>
         )}
       </div>

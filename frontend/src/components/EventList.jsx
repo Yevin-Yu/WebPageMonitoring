@@ -3,6 +3,11 @@ import { exportEvents } from '../utils/export';
 import { useEvents } from '../hooks/useEvents';
 import dayjs from 'dayjs';
 
+/**
+ * 格式化访问时长
+ * @param {number} seconds - 秒数
+ * @returns {string} 格式化后的时长字符串
+ */
 function formatVisitDuration(seconds) {
   if (!seconds || seconds === 0) return '-';
   if (seconds < 60) return `${seconds}秒`;
@@ -11,6 +16,10 @@ function formatVisitDuration(seconds) {
   return secs > 0 ? `${minutes}分${secs}秒` : `${minutes}分钟`;
 }
 
+/**
+ * 事件列表组件
+ * @param {string} projectKey - 项目 Key
+ */
 function EventList({ projectKey }) {
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState('');
@@ -47,7 +56,7 @@ function EventList({ projectKey }) {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
       <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <label style={{ fontSize: '0.875rem' }}>事件类型筛选:</label>
@@ -77,21 +86,30 @@ function EventList({ projectKey }) {
         </div>
       ) : (
         <>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+          <div style={{ 
+            overflowX: 'auto', 
+            overflowY: 'visible', 
+            width: '100%',
+            maxWidth: '100%',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent',
+            boxSizing: 'border-box'
+          }}>
+            <table className="table" style={{ minWidth: '1200px', width: 'max-content' }}>
               <thead>
                 <tr>
-                  <th>访问时间</th>
-                  <th>地域</th>
-                  <th>来源</th>
-                  <th>入口页面</th>
-                  <th>搜索词</th>
-                  <th>访问IP</th>
-                  <th>访客标识码</th>
-                  <th>访问时长</th>
-                  <th>访问页数</th>
-                  <th>类型</th>
-                  <th>当前页面</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '140px' }}>访问时间</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '80px' }}>地域</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '100px' }}>来源</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '200px' }}>入口页面</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '120px' }}>搜索词</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '120px' }}>访问IP</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '150px' }}>访客标识码</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '100px' }}>访问时长</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '80px' }}>访问页数</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '90px' }}>类型</th>
+                  <th style={{ whiteSpace: 'nowrap', minWidth: '200px' }}>当前页面</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,13 +118,13 @@ function EventList({ projectKey }) {
                       <td style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
                         {dayjs(event.timestamp).format('YYYY-MM-DD HH:mm:ss')}
                       </td>
-                      <td style={{ fontSize: '0.8125rem' }}>
+                      <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
                         {event.region || '-'}
                       </td>
-                      <td style={{ fontSize: '0.8125rem', maxWidth: '120px' }}>
+                      <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
                         {event.source || '-'}
                       </td>
-                      <td style={{ fontSize: '0.8125rem', maxWidth: '200px' }}>
+                      <td style={{ fontSize: '0.8125rem', wordBreak: 'break-all' }}>
                         {event.entry_page ? (
                           <a
                             href={event.entry_page}
@@ -116,41 +134,37 @@ function EventList({ projectKey }) {
                             style={{ fontSize: '0.8125rem' }}
                             title={event.entry_page}
                           >
-                            {event.entry_page.length > 30 
-                              ? event.entry_page.substring(0, 30) + '...' 
-                              : event.entry_page}
+                            {event.entry_page}
                           </a>
                         ) : '-'}
                       </td>
-                      <td style={{ fontSize: '0.8125rem', maxWidth: '150px' }}>
+                      <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
                         {event.search_keyword || '-'}
                       </td>
-                      <td style={{ fontSize: '0.8125rem' }}>
+                      <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
                         {event.user_ip || '-'}
                       </td>
-                      <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '150px' }}>
+                      <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                         {event.visitor_id ? (
                           <span title={event.visitor_id}>
-                            {event.visitor_id.length > 20 
-                              ? event.visitor_id.substring(0, 20) + '...' 
-                              : event.visitor_id}
+                            {event.visitor_id}
                           </span>
                         ) : '-'}
                       </td>
                       <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
                         {formatVisitDuration(event.visit_duration)}
                       </td>
-                      <td style={{ fontSize: '0.8125rem', textAlign: 'center' }}>
+                      <td style={{ fontSize: '0.8125rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         {event.page_count || '-'}
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span className={`badge ${getEventTypeBadge(event.type)}`}>
                           {event.type === 'pageview' ? '页面访问' : 
                            event.type === 'click' ? '点击' : 
                            event.type === 'error' ? '错误' : event.type}
                         </span>
                       </td>
-                      <td style={{ fontSize: '0.8125rem', maxWidth: '200px' }}>
+                      <td style={{ fontSize: '0.8125rem', wordBreak: 'break-all' }}>
                         {event.page_url ? (
                           <a
                             href={event.page_url}
@@ -160,9 +174,7 @@ function EventList({ projectKey }) {
                             style={{ fontSize: '0.8125rem' }}
                             title={event.page_url}
                           >
-                            {event.page_url.length > 40 
-                              ? event.page_url.substring(0, 40) + '...' 
-                              : event.page_url}
+                            {event.page_url}
                           </a>
                         ) : '-'}
                       </td>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监控插件本地测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #666;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .error-btn {
+            background: #ff4444;
+        }
+
+        .error-btn:hover {
+            background: #cc0000;
+        }
+
+        .success-btn {
+            background: #4caf50;
+        }
+
+        .success-btn:hover {
+            background: #45a049;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box strong {
+            color: #1976d2;
+        }
+
+        ol {
+            line-height: 2;
+            color: #666;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-left: 10px;
+        }
+
+        .status.loading {
+            background: #ffa726;
+            color: white;
+        }
+
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+
+    <!-- 监控插件嵌入代码 - 本地测试版本 -->
+    <!-- 
+      使用方式：
+      在 script 标签的 src 属性中添加参数即可，插件会自动初始化
+      
+      格式：
+      <script src="./monitoring.js?key=项目Key&apiUrl=API地址"></script>
+      
+      示例：
+      <script src="./monitoring.js?key=test-project-key&apiUrl=http://localhost:3002"></script>
+    -->
+    <script src="./monitoring.js?key=test-project-key&apiUrl=http://localhost:3002"></script>
+    
+    <script>
+      // 检查插件是否加载成功
+      (function() {
+        function checkPlugin() {
+          if (window.WebPageMonitoring) {
+            var config = window.WebPageMonitoring.config;
+            if (config.projectKey && config.apiUrl) {
+              updateStatus('success', '监控插件已加载并初始化');
+              console.log('监控插件已初始化');
+              console.log('项目Key:', config.projectKey);
+              console.log('API地址:', config.apiUrl);
+            } else {
+              updateStatus('error', '监控插件配置不完整，请检查 script 标签的 src 参数');
+            }
+          } else {
+            updateStatus('error', '监控插件加载失败，请检查文件路径');
+          }
+        }
+        
+        // 等待插件加载
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkPlugin, 100);
+          });
+        } else {
+          setTimeout(checkPlugin, 100);
+        }
+      })();
+
+      function updateStatus(type, message) {
+        var statusEl = document.getElementById('plugin-status');
+        if (statusEl) {
+          statusEl.className = 'status ' + type;
+          statusEl.textContent = message;
+        }
+      }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>监控插件本地测试页面 <span id="plugin-status" class="status loading">加载中...</span></h1>
+        <p>这是一个用于本地开发和测试的页面，用于验证监控插件是否正常工作。</p>
+
+        <div class="info-box">
+            <strong>📌 使用说明：</strong>
+            <ol>
+                <li>确保后端服务运行在 <code>http://localhost:3002</code></li>
+                <li>在前端面板创建项目并获取项目 Key</li>
+                <li>在 script 标签的 src 属性中添加参数：<code>?key=项目Key&apiUrl=http://localhost:3002</code></li>
+                <li>将页面中的 <code>key</code> 参数替换为你的实际项目 Key</li>
+                <li>确保 <code>monitoring.js</code> 文件在同一目录下，或修改 <code>script.src</code> 路径</li>
+                <li>打开浏览器控制台（F12）查看日志</li>
+                <li>点击下面的按钮测试各种功能</li>
+                <li>在前端面板的"项目监控"页面查看收集到的数据</li>
+            </ol>
+        </div>
+
+        <h2>测试功能</h2>
+        <div>
+            <button onclick="testClick()">测试点击事件</button>
+            <button onclick="testError()" class="error-btn">测试错误捕获</button>
+            <button onclick="testCustomEvent()">测试自定义事件</button>
+            <button onclick="testPageView()" class="success-btn">手动触发页面访问</button>
+            <button onclick="testPerformance()">测试性能数据</button>
+        </div>
+
+        <h2>测试说明</h2>
+        <ul style="line-height: 2; color: #666;">
+            <li><strong>点击事件</strong>：点击按钮会触发点击事件追踪</li>
+            <li><strong>错误捕获</strong>：会故意抛出一个错误，测试错误追踪功能</li>
+            <li><strong>自定义事件</strong>：发送一个自定义事件到服务器</li>
+            <li><strong>页面访问</strong>：手动触发一次页面访问事件</li>
+            <li><strong>性能数据</strong>：查看控制台输出的性能指标</li>
+        </ul>
+
+        <h2>检查数据</h2>
+        <p>测试完成后，请到前端面板的以下位置查看数据：</p>
+        <ol>
+            <li>登录前端管理系统</li>
+            <li>进入"项目监控"页面</li>
+            <li>选择对应的项目</li>
+            <li>查看"数据概览"、"事件列表"等标签页</li>
+        </ol>
+
+        <h2>常见问题</h2>
+        <div class="info-box">
+            <strong>❓ 插件未加载？</strong><br>
+            检查浏览器控制台的错误信息，确认 <code>monitoring.js</code> 文件路径正确。<br><br>
+            
+            <strong>❓ 数据未发送？</strong><br>
+            1. 确认后端服务运行在 <code>http://localhost:3002</code><br>
+            2. 检查浏览器控制台的网络请求，查看是否有发送到 <code>/api/events</code> 的请求<br>
+            3. 检查 CORS 设置，确保允许来自当前页面的请求<br><br>
+            
+            <strong>❓ 项目 Key 错误？</strong><br>
+            在前端面板创建项目后，复制项目 Key 并替换页面中的 <code>projectKey</code> 值。
+        </div>
+    </div>
+
+    <script>
+        function testClick() {
+            console.log('测试点击事件');
+            alert('点击事件已触发！\n\n请在前端面板的"项目监控" -> "事件列表"中查看数据。\n\n也可以打开浏览器控制台（F12）查看发送的请求。');
+        }
+
+        function testError() {
+            console.log('测试错误捕获');
+            try {
+                // 故意触发一个错误
+                throw new Error('这是一个测试错误 - ' + new Date().toLocaleString());
+            } catch (e) {
+                console.error('捕获到错误:', e);
+                alert('错误已触发！\n\n错误信息：' + e.message + '\n\n请在前端面板查看错误数据。');
+            }
+        }
+
+        function testCustomEvent() {
+            if (window.WebPageMonitoring) {
+                window.WebPageMonitoring.track('custom', {
+                    action: 'test',
+                    message: '这是一个自定义事件',
+                    timestamp: new Date().toISOString(),
+                    testData: {
+                        button: 'testCustomEvent',
+                        page: window.location.href
+                    }
+                });
+                console.log('自定义事件已发送');
+                alert('自定义事件已发送！\n\n请在前端面板查看数据。');
+            } else {
+                alert('监控插件未加载，请检查插件文件路径');
+            }
+        }
+
+        function testPageView() {
+            if (window.WebPageMonitoring) {
+                window.WebPageMonitoring.track('pageview', {
+                    page_url: window.location.href,
+                    page_title: document.title,
+                    referrer: document.referrer || ''
+                });
+                console.log('页面访问事件已发送');
+                alert('页面访问事件已手动触发！\n\n请在前端面板查看数据。');
+            } else {
+                alert('监控插件未加载');
+            }
+        }
+
+        function testPerformance() {
+            if (window.performance && window.performance.timing) {
+                const timing = window.performance.timing;
+                const perfData = {
+                    'DNS查询时间': timing.domainLookupEnd - timing.domainLookupStart + 'ms',
+                    'TCP连接时间': timing.connectEnd - timing.connectStart + 'ms',
+                    '请求响应时间': timing.responseEnd - timing.requestStart + 'ms',
+                    'DOM解析时间': timing.domComplete - timing.domInteractive + 'ms',
+                    '页面加载时间': timing.loadEventEnd - timing.navigationStart + 'ms'
+                };
+                console.log('性能数据:', perfData);
+                alert('性能数据已输出到控制台！\n\n请按 F12 打开控制台查看详细信息。');
+            } else {
+                alert('浏览器不支持性能 API');
+            }
+        }
+
+        // 页面加载完成提示
+        window.addEventListener('load', function() {
+            console.log('页面加载完成，监控插件应该已经开始工作');
+            console.log('如果看到错误，请检查：');
+            console.log('1. monitoring.js 文件是否存在');
+            console.log('2. 后端服务是否运行在 http://localhost:3002');
+            console.log('3. projectKey 是否正确');
+        });
+    </script>
+</body>
+
+</html>
+

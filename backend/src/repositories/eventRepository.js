@@ -7,6 +7,10 @@ const logger = createLogger('EventRepository');
 const DATA_DIR = path.join(__dirname, '../../data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.csv');
 
+/**
+ * 读取所有事件数据
+ * @returns {Array} 事件数组
+ */
 function readEvents() {
   try {
     if (!fs.existsSync(EVENTS_FILE)) {
@@ -75,6 +79,10 @@ function readEvents() {
   }
 }
 
+/**
+ * 追加事件到 CSV 文件
+ * @param {Object} event - 事件对象
+ */
 function appendEvent(event) {
   try {
     if (!event || typeof event !== 'object') {

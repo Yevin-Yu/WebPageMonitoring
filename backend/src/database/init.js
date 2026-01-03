@@ -10,7 +10,8 @@ const PROJECTS_FILE = path.join(DATA_DIR, 'projects.csv');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.csv');
 
 /**
- * 初始化数据文件
+ * 初始化数据文件和目录
+ * 如果文件不存在则创建，并处理数据迁移
  */
 function initDatabase() {
   if (!fs.existsSync(DATA_DIR)) {

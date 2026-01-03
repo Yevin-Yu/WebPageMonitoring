@@ -27,6 +27,10 @@ export function useProjects() {
     loadProjects();
   }, [loadProjects]);
 
-  return { projects, loading, error, refetch: loadProjects };
+  const addProject = useCallback((project) => {
+    setProjects(prev => [project, ...prev]);
+  }, []);
+
+  return { projects, loading, error, refetch: loadProjects, addProject };
 }
 

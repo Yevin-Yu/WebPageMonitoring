@@ -1,21 +1,116 @@
 /**
- * 前端页面监控插件
- * 可以嵌入到任何前端项目中，自动收集访问数据并发送到监控服务器
+ * 前端统计插件
+ * 可嵌入到任何前端项目中，自动收集页面访问数据并发送到监控服务器
+ *
+ * @version 2.1.0
+ *
+ * 使用方式：
+ *
+ * 1. 使用 data 属性（推荐）：
+ * <script src="/plugin/monitoring.js" data-project-key="项目Key" async></script>
+ *
+ * 2. 使用 data 属性指定 API（可选）：
+ * <script src="/plugin/monitoring.js" data-project-key="项目Key" data-api-url="API地址" async></script>
+ *
+ * 3. 使用 URL 参数（向后兼容）：
+ * <script src="/plugin/monitoring.js?key=项目Key&apiUrl=API地址" async></script>
+ *
+ * 示例：
+ * <script src="https://example.com/plugin/monitoring.js" data-project-key="123123" async></script>
  */
 (function (window) {
     'use strict';
 
-    // 配置对象
+    /**
+     * 从URL中获取指定参数的值
+     * @param {string} name - 参数名
+     * @param {string} url - URL字符串
+     * @returns {string|null} 参数值
+     */
+    function getUrlParam(name, url) {
+        try {
+            const urlObj = new URL(url);
+            const value = urlObj.searchParams.get(name);
+            if (value) {
+                return decodeURIComponent(value);
+            }
+        } catch (e) {
+            // URL解析失败，尝试简单的字符串匹配
+            const regex = new RegExp('[?&]' + name + '=([^&]*)', 'i');
+            const match = url.match(regex);
+            if (match && match[1]) {
+                return decodeURIComponent(match[1]);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 从 script 标签中获取配置
+     * 支持从 src 的 URL 参数和 data-* 属性获取配置
+     * @returns {Object} 配置对象
+     */
+    function getConfigFromScript() {
+        const scriptConfig = {};
+
+        // 查找所有包含 monitoring.js 的 script 标签
+        const scripts = document.querySelectorAll('script[src*="monitoring.js"]');
+
+        for (let i = 0; i < scripts.length; i++) {
+            const script = scripts[i];
+            const src = script.getAttribute('src');
+
+            // 优先从 data-* 属性获取配置
+            const dataProjectKey = script.getAttribute('data-project-key');
+            if (dataProjectKey && !scriptConfig.projectKey) {
+                scriptConfig.projectKey = dataProjectKey;
+            }
+
+            const dataApiUrl = script.getAttribute('data-api-url');
+            if (dataApiUrl && !scriptConfig.apiUrl) {
+                scriptConfig.apiUrl = dataApiUrl;
+            }
+
+            // 如果有 src，从 URL 参数获取配置（作为备选）
+            if (src) {
+                const projectKey = getUrlParam('key', src) || getUrlParam('projectKey', src);
+                if (projectKey && !scriptConfig.projectKey) {
+                    scriptConfig.projectKey = projectKey;
+                }
+
+                const apiUrl = getUrlParam('apiUrl', src);
+                if (apiUrl && !scriptConfig.apiUrl) {
+                    scriptConfig.apiUrl = apiUrl;
+                }
+            }
+
+            // 如果已经找到所有需要的参数，可以提前退出
+            if (scriptConfig.projectKey && scriptConfig.apiUrl) {
+                break;
+            }
+        }
+
+        return scriptConfig;
+    }
+
+    /**
+     * 从 URL 参数中获取配置（已废弃，保留向后兼容）
+     * @returns {Object} 配置对象
+     */
+    function getConfigFromUrl() {
+        return getConfigFromScript();
+    }
+
     const config = {
-        apiUrl: '', // 监控服务器地址，由用户配置
-        projectKey: '', // 项目唯一标识
-        autoTrack: true, // 是否自动追踪
-        trackPageView: true, // 是否追踪页面访问
-        trackClick: true, // 是否追踪点击事件
-        trackError: true, // 是否追踪错误
-        trackPerformance: true, // 是否追踪性能数据
-        batchSize: 10, // 批量发送大小
-        flushInterval: 5000, // 批量发送间隔（毫秒）
+        apiUrl: '',
+        projectKey: '',
+        autoTrack: true,
+        trackPageView: true,
+        trackClick: false,
+        trackError: false,
+        trackPerformance: false,
+        batchSize: 10,
+        flushInterval: 5000,
     };
 
     // 数据队列
@@ -31,6 +126,8 @@
 
     /**
      * 生成或获取访客标识码
+     * 优先使用 localStorage，不可用时使用 sessionStorage，最后生成临时 ID
+     * @returns {string} 访客标识码
      */
     function getVisitorId() {
         if (visitorId) {
@@ -63,6 +160,7 @@
 
     /**
      * 初始化会话
+     * 会话超时时间为 30 分钟
      */
     function initSession() {
         const sessionKey = 'wpm_session_' + config.projectKey;
@@ -440,7 +538,7 @@
     }
 
     /**
-     * 追踪页面访问
+     * 追踪页面访问事件
      */
     function trackPageView() {
         if (!config.trackPageView) return;
@@ -472,7 +570,7 @@
     }
 
     /**
-     * 追踪点击事件
+     * 追踪点击事件（已禁用）
      */
     function trackClick(event) {
         if (!config.trackClick) return;
@@ -489,7 +587,7 @@
     }
 
     /**
-     * 追踪错误
+     * 追踪错误事件（已禁用）
      */
     function trackError(error, source, lineno, colno) {
         if (!config.trackError) return;
@@ -504,14 +602,25 @@
     }
 
     /**
-     * 初始化监控
+     * 初始化监控插件
+     * @param {Object} options - 配置选项（可选，如果未提供则从URL参数读取）
+     * @param {string} [options.apiUrl] - API 服务器地址（可选，可从URL参数 ?apiUrl=xxx 获取）
+     * @param {string} [options.projectKey] - 项目 Key（可选，可从URL参数 ?key=xxx 或 ?projectKey=xxx 获取）
+     * @param {boolean} [options.autoTrack=true] - 是否自动追踪
+     * @param {boolean} [options.trackPageView=true] - 是否追踪页面访问
      */
     function init(options = {}) {
-        // 合并配置
-        Object.assign(config, options);
+        // 先从URL参数获取配置
+        const urlConfig = getConfigFromUrl();
+        
+        // 合并配置：URL参数 < 传入的options < 默认config
+        Object.assign(config, urlConfig, options);
 
         if (!config.apiUrl || !config.projectKey) {
             console.error('监控插件初始化失败: 缺少 apiUrl 或 projectKey');
+            console.error('请通过以下方式之一提供配置：');
+            console.error('1. URL参数：?key=项目Key&apiUrl=API地址');
+            console.error('2. 配置对象：WebPageMonitoring.init({ projectKey: "xxx", apiUrl: "xxx" })');
             return;
         }
 
@@ -573,6 +682,34 @@
             }
         });
     }
+
+    // 自动初始化：从 script 标签获取配置并初始化
+    (function autoInit() {
+        const scriptConfig = getConfigFromScript();
+
+        // 如果提供了 projectKey，尝试自动推断 apiUrl
+        if (scriptConfig.projectKey && !scriptConfig.apiUrl) {
+            // 自动推断：使用当前域名（同域）
+            scriptConfig.apiUrl = window.location.origin;
+        }
+
+        // 如果有 projectKey 和 apiUrl，自动初始化
+        if (scriptConfig.projectKey && scriptConfig.apiUrl) {
+            // 延迟执行，确保所有代码都已加载
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    init(scriptConfig);
+                });
+            } else {
+                // DOM已加载完成，立即初始化
+                setTimeout(function() {
+                    init(scriptConfig);
+                }, 0);
+            }
+        } else {
+            console.warn('监控插件未正确配置。请确保 script 标签包含 data-project-key 属性');
+        }
+    })();
 
     // 暴露 API
     window.WebPageMonitoring = {

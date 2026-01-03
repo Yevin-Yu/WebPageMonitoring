@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminLayout } from './components/Layout/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
+import { storage } from './utils/storage';
 
 function App() {
   const { loading } = useAuth();
@@ -23,7 +24,7 @@ function App() {
         <Routes>
           <Route
             path="/login"
-            element={localStorage.getItem('token') ? <Navigate to="/" replace /> : <Login />}
+            element={storage.isAuthenticated() ? <Navigate to="/" replace /> : <Login />}
           />
           <Route
             path="/*"
