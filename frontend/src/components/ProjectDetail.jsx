@@ -58,12 +58,22 @@ function ProjectDetail() {
   };
 
   const getApiUrl = () => {
-    // API URL 通常是后端地址
+    // 生产环境：使用同域地址（Nginx 反向代理处理 /api/ 路径）
+    // 开发环境：使用带端口的地址
     const protocol = window.location.protocol;
     const host = window.location.hostname;
-    // 默认后端端口是3001，可以根据实际情况调整
-    const apiPort = '3001';
-    return `${protocol}//${host}:${apiPort}`;
+    const port = window.location.port;
+    
+    // 判断是否为生产环境（通过端口判断，生产环境通常没有端口或使用标准端口）
+    const isProduction = !port || port === '80' || port === '443' || window.location.hostname !== 'localhost';
+    
+    if (isProduction) {
+      // 生产环境：使用同域地址，Nginx 会处理 /api/ 路径的反向代理
+      return port ? `${protocol}//${host}:${port}` : `${protocol}//${host}`;
+    } else {
+      // 开发环境：使用带端口的后端地址
+      return `${protocol}//${host}:3002`;
+    }
   };
 
   const handleCopyCode = async () => {
@@ -207,6 +217,20 @@ function ProjectDetail() {
                 fontSize: '0.8em'
               }}>&lt;/head&gt;</code> 之前）:
             </p>
+            <div style={{ 
+              marginBottom: '1rem', 
+              padding: '0.75rem', 
+              background: 'rgba(59, 130, 246, 0.1)', 
+              borderRadius: '6px',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              fontSize: '0.8125rem',
+              color: '#1e40af'
+            }}>
+              <strong>💡 部署提示：</strong> 代码中的 apiUrl 已自动适配当前环境。
+              {window.location.hostname === 'localhost' 
+                ? ' 开发环境使用端口 3002，生产环境将自动使用同域地址。'
+                : ' 生产环境使用同域地址，Nginx 会处理 API 请求的反向代理。'}
+            </div>
             <pre className="code-block" style={{ 
               whiteSpace: 'pre-wrap', 
               wordBreak: 'break-all',

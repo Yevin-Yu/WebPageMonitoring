@@ -53,7 +53,7 @@ node build.js prod
 <script src="dist/monitoring.dev.js"></script>
 <script>
   window.WebPageMonitoring.init({
-    apiUrl: 'http://localhost:3001',
+    apiUrl: 'http://localhost:3002',
     projectKey: 'your-project-key',
     autoTrack: true,
     trackPageView: true,
@@ -102,7 +102,7 @@ node build.js prod
 
 ```javascript
 window.WebPageMonitoring.init({
-  apiUrl: 'http://localhost:3001',
+  apiUrl: 'http://localhost:3002',
   projectKey: 'your-project-key'
 });
 ```

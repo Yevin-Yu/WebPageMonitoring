@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Dashboard from './Dashboard';
 import EventList from './EventList';
 import RealtimeDashboard from './RealtimeDashboard';
 import UserPaths from './Analytics/UserPaths';
 import ConversionFunnel from './Analytics/ConversionFunnel';
 import RegionStats from './Analytics/RegionStats';
+import WebVitals from './Analytics/WebVitals';
+import DeviceBrowserStats from './Analytics/DeviceBrowserStats';
+import ErrorAnalysis from './Analytics/ErrorAnalysis';
 import { useProjects } from '../hooks/useProjects';
+import { TIME_RANGES } from '../utils/constants';
 
 function ProjectMonitoring() {
   const { projects, loading, error } = useProjects();
@@ -25,14 +29,14 @@ function ProjectMonitoring() {
     setActiveTab('dashboard');
   };
 
-  const getTimeRange = () => {
+  const timeRangeData = useMemo(() => {
     const now = new Date();
     const timeRangeConfig = TIME_RANGES[timeRange];
     const startTime = timeRangeConfig
       ? new Date(now.getTime() - timeRangeConfig.value).toISOString()
       : null;
     return { startTime, endTime: now.toISOString() };
-  };
+  }, [timeRange]);
 
   if (loading) {
     return <div className="loading">加载中...</div>;
@@ -154,7 +158,7 @@ function ProjectMonitoring() {
                   </button>
                 </div>
               </div>
-              <Dashboard projectKey={selectedProjectKey} />
+              <Dashboard projectKey={selectedProjectKey} timeRange={timeRange} />
             </div>
           )}
           {activeTab === 'realtime' && <RealtimeDashboard projectKey={selectedProjectKey} />}
@@ -182,16 +186,9 @@ function ProjectMonitoring() {
                   </button>
                 </div>
               </div>
-              {(() => {
-                const { startTime, endTime } = getTimeRange();
-                return (
-                  <>
-                    <UserPaths projectKey={selectedProjectKey} startTime={startTime} endTime={endTime} />
-                    <ConversionFunnel projectKey={selectedProjectKey} startTime={startTime} endTime={endTime} />
-                    <RegionStats projectKey={selectedProjectKey} startTime={startTime} endTime={endTime} />
-                  </>
-                );
-              })()}
+              <UserPaths projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
+              <ConversionFunnel projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
+              <RegionStats projectKey={selectedProjectKey} startTime={timeRangeData.startTime} endTime={timeRangeData.endTime} />
             </div>
           )}
           {activeTab === 'events' && <EventList projectKey={selectedProjectKey} />}

@@ -27,23 +27,33 @@
     </style>
 
     <!-- 监控插件嵌入代码 -->
+    <!-- 
+      部署说明：
+      1. 开发环境：apiUrl 使用带端口的地址，如 'http://localhost:3002'
+      2. 生产环境（宝塔部署）：apiUrl 使用同域地址，如 'http://web.yuwb.cn' 或 'https://web.yuwb.cn'
+         - Nginx 会将 /api/ 路径反向代理到后端服务
+         - 插件会自动在 apiUrl 后添加 /api/events 路径
+    -->
     <script>
-        (function () {
-            var script = document.createElement('script');
-            script.src = 'http://localhost:3000/plugin/monitoring.js';
-            script.onload = function () {
-                window.WebPageMonitoring.init({
-                    apiUrl: 'http://localhost:3001',
-                    projectKey: '0346c20e5580a8d83b0372089bbfdd8d', // 请替换为你的项目 Key
-                    autoTrack: true,
-                    trackPageView: true,
-                    trackClick: true,
-                    trackError: true,
-                    trackPerformance: true
-                });
-            };
-            document.head.appendChild(script);
-        })();
+      (function() {
+    var script = document.createElement('script');
+    // 插件文件地址（生产环境：同域访问；开发环境：可指定完整路径）
+    script.src = 'http://web.yuwb.cn/plugin/monitoring.js';
+    script.onload = function() {
+      window.WebPageMonitoring.init({
+        // 生产环境：使用同域地址（Nginx 反向代理处理 /api/ 路径）
+        // 开发环境：使用 'http://localhost:3002'
+        apiUrl: 'http://web.yuwb.cn',  // 部署后使用同域地址，无需端口号
+        projectKey: '0346c20e5580a8d83b0372089bbfdd8d',
+        autoTrack: true,
+        trackPageView: true,
+        trackClick: true,
+        trackError: true,
+        trackPerformance: true
+      });
+    };
+    document.head.appendChild(script);
+  })();
     </script>
 </head>
 
@@ -59,9 +69,9 @@
     <h2>说明</h2>
     <ol>
         <li>请先在前端面板创建项目并获取项目 Key</li>
-        <li>将上面的 YOUR_PROJECT_KEY_HERE 替换为你的项目 Key</li>
-        <li>确保后端服务运行在 http://localhost:3001</li>
-        <li>确保前端服务运行在 http://localhost:3000</li>
+        <li>将上面的 projectKey 替换为你的项目 Key</li>
+        <li><strong>开发环境</strong>：apiUrl 设置为 'http://localhost:3002'</li>
+        <li><strong>生产环境（宝塔部署）</strong>：apiUrl 设置为同域地址，如 'http://web.yuwb.cn'（无需端口号）</li>
         <li>打开此页面，点击上面的按钮测试各种功能</li>
         <li>在前端面板查看收集到的数据</li>
     </ol>

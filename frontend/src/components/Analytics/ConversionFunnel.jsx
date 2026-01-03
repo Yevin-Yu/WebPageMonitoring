@@ -17,8 +17,12 @@ function ConversionFunnel({ projectKey, startTime, endTime }) {
   };
 
   const handleStepChange = (index, field, value) => {
-    const newSteps = [...steps];
-    newSteps[index][field] = value;
+    const newSteps = steps.map((step, i) => {
+      if (i === index) {
+        return { ...step, [field]: value };
+      }
+      return step;
+    });
     setSteps(newSteps);
   };
 

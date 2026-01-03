@@ -9,9 +9,24 @@ const crypto = require('crypto');
 async function createUser(username, password, email = '') {
   try {
     // 验证输入
-    const validatedUsername = validateUsername(username);
-    const validatedPassword = validatePassword(password);
-    const validatedEmail = validateEmail(email);
+    const usernameResult = validateUsername(username);
+    if (!usernameResult.valid) {
+      throw new ValidationError(usernameResult.error);
+    }
+    
+    const passwordResult = validatePassword(password);
+    if (!passwordResult.valid) {
+      throw new ValidationError(passwordResult.error);
+    }
+    
+    const emailResult = validateEmail(email);
+    if (!emailResult.valid && email) {
+      throw new ValidationError(emailResult.error);
+    }
+
+    const validatedUsername = username.trim();
+    const validatedPassword = password;
+    const validatedEmail = email ? email.trim() : '';
 
     const users = readUsers();
 

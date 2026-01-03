@@ -75,7 +75,7 @@ npm start
 npm run dev
 ```
 
-后端服务默认运行在 `http://localhost:3001`
+后端服务默认运行在 `http://localhost:3002`
 
 #### 启动前端服务
 ```bash
@@ -100,7 +100,7 @@ npm run dev
     script.src = 'http://localhost:3000/plugin/monitoring.js';
     script.onload = function() {
       window.WebPageMonitoring.init({
-        apiUrl: 'http://localhost:3001',
+        apiUrl: 'http://localhost:3002',
         projectKey: '你的项目Key',
         autoTrack: true,
         trackPageView: true,
@@ -168,7 +168,7 @@ GET /api/events/stats?projectKey=xxx&startTime=xxx&endTime=xxx
 
 ```javascript
 window.WebPageMonitoring.init({
-  apiUrl: 'http://localhost:3001',  // 后端 API 地址
+  apiUrl: 'http://localhost:3002',  // 后端 API 地址
   projectKey: 'your-project-key',    // 项目唯一标识
   autoTrack: true,                   // 是否自动追踪
   trackPageView: true,               // 是否追踪页面访问
@@ -184,7 +184,7 @@ window.WebPageMonitoring.init({
 
 后端可以通过环境变量配置：
 
-- `PORT`: 服务器端口（默认: 3001）
+- `PORT`: 服务器端口（默认: 3002）
 
 ## 数据收集内容
 

@@ -82,14 +82,14 @@ function validatePassword(password) {
 }
 
 /**
- * 验证邮箱
+ * 验证邮箱（可选字段）
  */
 function validateEmail(email) {
-  if (!email || typeof email !== 'string') {
-    return { valid: false, error: '邮箱不能为空' };
+  if (!email || typeof email !== 'string' || email.trim().length === 0) {
+    return { valid: true }; // 邮箱是可选的
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (!emailRegex.test(email.trim())) {
     return { valid: false, error: '邮箱格式不正确' };
   }
   return { valid: true };

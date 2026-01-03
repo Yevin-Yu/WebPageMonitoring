@@ -43,7 +43,7 @@ npm install --production
 2. 复制 `.env.example` 为 `.env`
 3. 编辑 `.env`，修改以下配置:
    ```env
-   PORT=3001
+   PORT=3002
    NODE_ENV=production
    CORS_ORIGIN=http://your-domain.com  # 改为你的域名
    JWT_SECRET=your-very-secret-key-here  # 改为随机字符串
@@ -56,7 +56,7 @@ npm install --production
    - 项目名称: `webpage-monitoring-backend`
    - 项目路径: `/www/wwwroot/webpage-monitoring/backend`
    - 启动文件: `src/index.js`
-   - 项目端口: `3001`
+   - 项目端口: `3002`
 3. 点击 **提交**
 
 ## 四、构建前端 (5分钟)
@@ -146,7 +146,7 @@ bash deploy.sh
 ### Q: 后端服务启动失败？
 A: 检查:
 1. `.env` 文件是否存在且配置正确
-2. 端口 3001 是否被占用
+2. 端口 3002 是否被占用
 3. 查看 PM2 日志
 
 ### Q: 前端页面空白？
@@ -157,9 +157,12 @@ A: 检查:
 
 ### Q: API 请求 404？
 A: 检查:
-1. Nginx 配置中的 `/api/` 代理是否正确
+1. Nginx 配置中的 `/api/` 代理是否正确（应代理到 `http://127.0.0.1:3002`）
 2. 后端服务是否运行: `pm2 list`
-3. 后端端口是否为 3001
+3. 后端端口是否为 3002
+4. 插件中的 apiUrl 是否正确：
+   - 生产环境应使用同域地址（如 `http://your-domain.com`），无需端口号
+   - 开发环境可使用 `http://localhost:3002`
 
 ### Q: 插件无法加载？
 A: 检查:

@@ -49,7 +49,7 @@ function RegionStats({ projectKey, startTime, endTime }) {
 
   const chartData = regions.slice(0, 20).map(r => ({
     name: r.region || '未知',
-    value: r.pageviews,
+    value: r.pageviews || 0,
   }));
 
   return (

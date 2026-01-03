@@ -7,8 +7,9 @@ import DeviceBrowserStats from './Analytics/DeviceBrowserStats';
 import ErrorAnalysis from './Analytics/ErrorAnalysis';
 import { useStats } from '../hooks/useStats';
 
-function Dashboard({ projectKey }) {
-  const [timeRange, setTimeRange] = useState('24h');
+function Dashboard({ projectKey, timeRange: timeRangeProp }) {
+  const [internalTimeRange, setInternalTimeRange] = useState('24h');
+  const timeRange = timeRangeProp || internalTimeRange;
   const { stats, loading, error, refetch } = useStats(projectKey, timeRange);
 
   const eventTypeData = useMemo(() => {
@@ -23,7 +24,7 @@ function Dashboard({ projectKey }) {
   const topPagesData = useMemo(() => {
     if (!stats?.topPages) return [];
     return stats.topPages.slice(0, 10).map((page) => ({
-      name: page.page_title || page.page_url.substring(0, 20) + '...',
+      name: page.page_title || (page.page_url ? page.page_url.substring(0, 20) + '...' : '未知页面'),
       value: page.count,
     }));
   }, [stats?.topPages]);
@@ -51,26 +52,28 @@ function Dashboard({ projectKey }) {
     <div className="dashboard">
       <div className="dashboard-header">
         <h2 className="dashboard-title">数据概览</h2>
-        <div className="time-range-selector">
-          <button
-            className={`time-btn ${timeRange === '24h' ? 'active' : ''}`}
-            onClick={() => setTimeRange('24h')}
-          >
-            24小时
-          </button>
-          <button
-            className={`time-btn ${timeRange === '7d' ? 'active' : ''}`}
-            onClick={() => setTimeRange('7d')}
-          >
-            7天
-          </button>
-          <button
-            className={`time-btn ${timeRange === '30d' ? 'active' : ''}`}
-            onClick={() => setTimeRange('30d')}
-          >
-            30天
-          </button>
-        </div>
+        {!timeRangeProp && (
+          <div className="time-range-selector">
+            <button
+              className={`time-btn ${timeRange === '24h' ? 'active' : ''}`}
+              onClick={() => setInternalTimeRange('24h')}
+            >
+              24小时
+            </button>
+            <button
+              className={`time-btn ${timeRange === '7d' ? 'active' : ''}`}
+              onClick={() => setInternalTimeRange('7d')}
+            >
+              7天
+            </button>
+            <button
+              className={`time-btn ${timeRange === '30d' ? 'active' : ''}`}
+              onClick={() => setInternalTimeRange('30d')}
+            >
+              30天
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="stats-cards">
@@ -123,10 +126,10 @@ function Dashboard({ projectKey }) {
           <h3 className="table-title">访问趋势</h3>
           <LineChart 
             data={stats.timeTrend.map(item => ({
-              time: item.time,
-              pageviews: item.pageviews,
-              clicks: item.clicks,
-              errors: item.errors,
+              time: item.time || '',
+              pageviews: item.pageviews || 0,
+              clicks: item.clicks || 0,
+              errors: item.errors || 0,
             }))} 
             title=""
             xKey="time"
@@ -179,14 +182,18 @@ function Dashboard({ projectKey }) {
                   <td>{index + 1}</td>
                   <td>{page.page_title || '-'}</td>
                   <td>
-                    <a
-                      href={page.page_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="table-link"
-                    >
-                      {page.page_url}
-                    </a>
+                    {page.page_url ? (
+                      <a
+                        href={page.page_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="table-link"
+                      >
+                        {page.page_url}
+                      </a>
+                    ) : (
+                      '-'
+                    )}
                   </td>
                   <td>{page.count}</td>
                 </tr>

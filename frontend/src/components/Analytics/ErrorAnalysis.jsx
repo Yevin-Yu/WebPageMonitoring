@@ -21,11 +21,11 @@ function ErrorAnalysis({ topErrors }) {
             <div className="error-item-header">
               <div className="error-rank">{index + 1}</div>
               <div className="error-main">
-                <div className="error-message">{error.message}</div>
+                <div className="error-message">{error.message || '未知错误'}</div>
                 <div className="error-meta">
-                  <span>出现次数: {error.count}</span>
-                  <span>首次出现: {new Date(error.firstSeen).toLocaleString('zh-CN')}</span>
-                  <span>最近出现: {new Date(error.lastSeen).toLocaleString('zh-CN')}</span>
+                  <span>出现次数: {error.count || 0}</span>
+                  <span>首次出现: {error.firstSeen ? new Date(error.firstSeen).toLocaleString('zh-CN') : '-'}</span>
+                  <span>最近出现: {error.lastSeen ? new Date(error.lastSeen).toLocaleString('zh-CN') : '-'}</span>
                 </div>
               </div>
             </div>
@@ -44,10 +44,10 @@ function ErrorAnalysis({ topErrors }) {
                       fontSize: '0.8125rem'
                     }}>
                       <div style={{ marginBottom: '0.25rem' }}>
-                        <strong>时间:</strong> {new Date(sample.timestamp).toLocaleString('zh-CN')}
+                        <strong>时间:</strong> {sample.timestamp ? new Date(sample.timestamp).toLocaleString('zh-CN') : '-'}
                       </div>
                       <div style={{ marginBottom: '0.25rem' }}>
-                        <strong>页面:</strong> {sample.page}
+                        <strong>页面:</strong> {sample.page || '-'}
                       </div>
                       {sample.stack && (
                         <details style={{ marginTop: '0.5rem' }}>

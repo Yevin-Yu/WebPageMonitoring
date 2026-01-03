@@ -9,7 +9,11 @@ const logger = createLogger('ProjectService');
 async function createProject(name, description = '', userId = null) {
   try {
     // 验证输入
-    const validatedName = validateProjectName(name);
+    const nameResult = validateProjectName(name);
+    if (!nameResult.valid) {
+      throw new ValidationError(nameResult.error);
+    }
+    const validatedName = name.trim();
     const validatedDescription = (description || '').trim().substring(0, 500);
 
     // 验证用户ID

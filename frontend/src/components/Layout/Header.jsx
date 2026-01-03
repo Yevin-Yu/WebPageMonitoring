@@ -1,8 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header className="admin-header">
@@ -15,7 +22,7 @@ export function Header() {
             <div className="user-info">
               <span className="username">{user.username}</span>
             </div>
-            <button className="btn btn-logout" onClick={logout}>
+            <button className="btn btn-logout" onClick={handleLogout}>
               登出
             </button>
           </>
