@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { escapeCSV, parseCSVLine } = require('../utils/csvParser');
+const { createLogger } = require('../utils/logger');
+
+const logger = createLogger('ProjectRepository');
 
 const DATA_DIR = path.join(__dirname, '../../data');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.csv');
@@ -40,14 +43,14 @@ function readProjects() {
           });
         }
       } catch (lineError) {
-        console.warn(`解析项目数据第 ${i + 1} 行失败:`, lineError.message);
+        logger.warn(`解析项目数据第 ${i + 1} 行失败`, { error: lineError.message });
         continue;
       }
     }
 
     return projects;
   } catch (error) {
-    console.error('读取项目数据失败:', error);
+    logger.error('读取项目数据失败', error);
     throw new Error('读取项目数据失败: ' + error.message);
   }
 }
@@ -85,7 +88,7 @@ function writeProjects(projects) {
         ].join(',');
         lines.push(line);
       } catch (lineError) {
-        console.warn(`写入项目数据第 ${index + 1} 项失败:`, lineError.message);
+        logger.warn(`写入项目数据第 ${index + 1} 项失败`, { error: lineError.message });
       }
     });
 
@@ -94,7 +97,7 @@ function writeProjects(projects) {
     fs.writeFileSync(tempFile, lines.join('\n'), 'utf8');
     fs.renameSync(tempFile, PROJECTS_FILE);
   } catch (error) {
-    console.error('写入项目数据失败:', error);
+    logger.error('写入项目数据失败', error);
     throw new Error('写入项目数据失败: ' + error.message);
   }
 }

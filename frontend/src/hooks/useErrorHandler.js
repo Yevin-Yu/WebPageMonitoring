@@ -7,7 +7,6 @@ export function useErrorHandler() {
   const handleError = useCallback((error) => {
     const message = getErrorMessage(error);
     setError(message);
-    console.error('Error:', error);
 
     // 3秒后自动清除错误
     setTimeout(() => {

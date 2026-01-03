@@ -22,6 +22,194 @@
     let dataQueue = [];
     let timer = null;
 
+    // 会话管理
+    let sessionId = null;
+    let sessionStartTime = null;
+    let sessionPageCount = 0;
+    let entryPage = null;
+    let visitorId = null;
+
+    /**
+     * 生成或获取访客标识码
+     */
+    function getVisitorId() {
+        if (visitorId) {
+            return visitorId;
+        }
+
+        const storageKey = 'wpm_visitor_id';
+        try {
+            visitorId = localStorage.getItem(storageKey);
+            if (!visitorId) {
+                // 生成唯一ID：时间戳 + 随机数
+                visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem(storageKey, visitorId);
+            }
+        } catch (e) {
+            // localStorage不可用时，使用sessionStorage
+            try {
+                visitorId = sessionStorage.getItem(storageKey);
+                if (!visitorId) {
+                    visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+                    sessionStorage.setItem(storageKey, visitorId);
+                }
+            } catch (e2) {
+                // 都不可用时，生成临时ID
+                visitorId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+            }
+        }
+        return visitorId;
+    }
+
+    /**
+     * 初始化会话
+     */
+    function initSession() {
+        const sessionKey = 'wpm_session_' + config.projectKey;
+        const sessionTimeout = 30 * 60 * 1000; // 30分钟无活动视为新会话
+
+        try {
+            const sessionData = sessionStorage.getItem(sessionKey);
+            const now = Date.now();
+
+            if (sessionData) {
+                try {
+                    const data = JSON.parse(sessionData);
+                    // 检查会话是否过期
+                    if (now - data.lastActivity < sessionTimeout) {
+                        sessionId = data.sessionId;
+                        sessionStartTime = data.startTime;
+                        sessionPageCount = data.pageCount || 0;
+                        entryPage = data.entryPage;
+                    } else {
+                        // 会话过期，创建新会话
+                        createNewSession();
+                    }
+                } catch (e) {
+                    createNewSession();
+                }
+            } else {
+                createNewSession();
+            }
+
+            function createNewSession() {
+                sessionId = 'session_' + now + '_' + Math.random().toString(36).substring(2, 15);
+                sessionStartTime = now;
+                sessionPageCount = 0;
+                entryPage = window.location.href;
+            }
+
+            // 更新会话数据
+            sessionPageCount++;
+            const sessionDataToSave = {
+                sessionId: sessionId,
+                startTime: sessionStartTime,
+                lastActivity: now,
+                pageCount: sessionPageCount,
+                entryPage: entryPage
+            };
+            sessionStorage.setItem(sessionKey, JSON.stringify(sessionDataToSave));
+        } catch (e) {
+            // sessionStorage不可用时，使用内存存储
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+                sessionStartTime = Date.now();
+                sessionPageCount = 0;
+                entryPage = window.location.href;
+            }
+            sessionPageCount++;
+        }
+    }
+
+    /**
+     * 获取搜索词（从URL参数中提取）
+     */
+    function getSearchKeyword() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // 常见搜索引擎的搜索参数
+        const searchParams = ['q', 'query', 'wd', 'keyword', 'search', 'p'];
+        
+        for (const param of searchParams) {
+            const value = urlParams.get(param);
+            if (value) {
+                return decodeURIComponent(value);
+            }
+        }
+
+        // 从referrer中提取搜索词
+        if (document.referrer) {
+            try {
+                const referrerUrl = new URL(document.referrer);
+                const referrerParams = new URLSearchParams(referrerUrl.search);
+                for (const param of searchParams) {
+                    const value = referrerParams.get(param);
+                    if (value) {
+                        return decodeURIComponent(value);
+                    }
+                }
+            } catch (e) {
+                // 忽略解析错误
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * 解析来源（从referrer中提取）
+     */
+    function getSource() {
+        const referrer = document.referrer;
+        if (!referrer) {
+            return '直接访问';
+        }
+
+        try {
+            const referrerUrl = new URL(referrer);
+            const hostname = referrerUrl.hostname.toLowerCase();
+
+            // 常见搜索引擎
+            const searchEngines = {
+                'www.google.com': 'Google',
+                'google.com': 'Google',
+                'www.baidu.com': '百度',
+                'baidu.com': '百度',
+                'www.bing.com': 'Bing',
+                'bing.com': 'Bing',
+                'www.yahoo.com': 'Yahoo',
+                'yahoo.com': 'Yahoo',
+                'www.sogou.com': '搜狗',
+                'sogou.com': '搜狗',
+                'www.so.com': '360搜索',
+                'so.com': '360搜索',
+            };
+
+            if (searchEngines[hostname]) {
+                return searchEngines[hostname];
+            }
+
+            // 检查是否是当前域名
+            if (hostname === window.location.hostname) {
+                return '站内访问';
+            }
+
+            // 返回域名作为来源
+            return hostname;
+        } catch (e) {
+            return referrer;
+        }
+    }
+
+    /**
+     * 获取访问时长（秒）
+     */
+    function getVisitDuration() {
+        if (!sessionStartTime) {
+            return 0;
+        }
+        return Math.floor((Date.now() - sessionStartTime) / 1000);
+    }
+
     /**
      * 获取用户信息
      */
@@ -77,7 +265,7 @@
         const timing = window.performance.timing;
         const navigation = window.performance.navigation;
 
-        return {
+        const perfData = {
             dnsTime: timing.domainLookupEnd - timing.domainLookupStart,
             tcpTime: timing.connectEnd - timing.connectStart,
             requestTime: timing.responseStart - timing.requestStart,
@@ -87,6 +275,57 @@
             redirectTime: timing.redirectEnd - timing.redirectStart,
             type: navigation.type,
         };
+
+        // 添加 Core Web Vitals
+        if (window.performance.getEntriesByType) {
+            // First Contentful Paint (FCP)
+            const fcpEntry = window.performance.getEntriesByName('first-contentful-paint')[0];
+            if (fcpEntry) {
+                perfData.fcp = Math.round(fcpEntry.startTime);
+            }
+
+            // Largest Contentful Paint (LCP) - 从已收集的条目中获取
+            const lcpEntries = window.performance.getEntriesByType('largest-contentful-paint');
+            if (lcpEntries && lcpEntries.length > 0) {
+                const lastEntry = lcpEntries[lcpEntries.length - 1];
+                perfData.lcp = Math.round(lastEntry.renderTime || lastEntry.loadTime);
+            }
+
+            // First Input Delay (FID) - 从已收集的条目中获取
+            const fidEntries = window.performance.getEntriesByType('first-input');
+            if (fidEntries && fidEntries.length > 0) {
+                const entry = fidEntries[0];
+                if (entry.processingStart && entry.startTime) {
+                    perfData.fid = Math.round(entry.processingStart - entry.startTime);
+                }
+            }
+
+            // Cumulative Layout Shift (CLS) - 从已收集的条目中获取
+            const clsEntries = window.performance.getEntriesByType('layout-shift');
+            if (clsEntries && clsEntries.length > 0) {
+                let clsValue = 0;
+                for (const entry of clsEntries) {
+                    if (!entry.hadRecentInput) {
+                        clsValue += entry.value;
+                    }
+                }
+                perfData.cls = Math.round(clsValue * 1000) / 1000;
+            }
+
+            // Time to First Byte (TTFB)
+            perfData.ttfb = timing.responseStart - timing.navigationStart;
+
+            // 资源加载时间
+            const resources = window.performance.getEntriesByType('resource');
+            perfData.resources = resources.slice(0, 20).map(resource => ({
+                name: resource.name,
+                type: resource.initiatorType,
+                duration: Math.round(resource.duration),
+                size: resource.transferSize || 0,
+            }));
+        }
+
+        return perfData;
     }
 
     /**
@@ -100,6 +339,14 @@
             page: getPageInfo(),
             user: getUserInfo(),
             data: data,
+            // 新增字段
+            visitorId: getVisitorId(),
+            sessionId: sessionId || '',
+            entryPage: entryPage || window.location.href,
+            source: getSource(),
+            searchKeyword: getSearchKeyword(),
+            visitDuration: getVisitDuration(),
+            pageCount: sessionPageCount || 0,
         };
 
         // 异步获取 IP（不阻塞主流程）
@@ -198,8 +445,30 @@
     function trackPageView() {
         if (!config.trackPageView) return;
 
-        const performanceData = config.trackPerformance ? getPerformanceData() : null;
-        track('pageview', { performance: performanceData });
+        // 立即发送页面访问事件
+        track('pageview', { performance: null });
+
+        // 延迟获取性能数据，确保所有指标都已收集
+        if (config.trackPerformance && window.performance) {
+            // 收集Core Web Vitals需要等待页面完全加载
+            if (document.readyState === 'complete') {
+                setTimeout(() => {
+                    const performanceData = getPerformanceData();
+                    if (performanceData && (performanceData.lcp || performanceData.fcp || performanceData.ttfb || performanceData.fid || performanceData.cls)) {
+                        track('performance', { performance: performanceData });
+                    }
+                }, 2000);
+            } else {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const performanceData = getPerformanceData();
+                        if (performanceData && (performanceData.lcp || performanceData.fcp || performanceData.ttfb)) {
+                            track('performance', { performance: performanceData });
+                        }
+                    }, 2000);
+                });
+            }
+        }
     }
 
     /**
@@ -245,6 +514,10 @@
             console.error('监控插件初始化失败: 缺少 apiUrl 或 projectKey');
             return;
         }
+
+        // 初始化会话和访客标识
+        getVisitorId();
+        initSession();
 
         // 追踪页面访问
         if (config.trackPageView) {

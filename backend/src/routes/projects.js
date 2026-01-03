@@ -6,6 +6,7 @@ const {
   getProjectsByUserId,
   verifyProjectOwnership,
 } = require('../services/projectService');
+const { validateProjectName, validateProjectDescription, sanitizeInput } = require('../utils/validator');
 
 const router = express.Router();
 
@@ -17,14 +18,29 @@ router.use(authenticateToken);
 router.post('/', asyncHandler(async (req, res) => {
   const { name, description } = req.body;
 
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+  // 验证项目名称
+  const nameValidation = validateProjectName(name);
+  if (!nameValidation.valid) {
     return res.status(400).json({ 
-      error: '项目名称不能为空',
+      error: nameValidation.error,
       code: 'VALIDATION_ERROR'
     });
   }
 
-  const project = await createProject(name, description || '', req.userId);
+  // 验证项目描述
+  const descValidation = validateProjectDescription(description);
+  if (!descValidation.valid) {
+    return res.status(400).json({ 
+      error: descValidation.error,
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  // 清理输入
+  const sanitizedName = sanitizeInput(name);
+  const sanitizedDescription = sanitizeInput(description || '');
+
+  const project = await createProject(sanitizedName, sanitizedDescription, req.userId);
   res.json(project);
 }));
 

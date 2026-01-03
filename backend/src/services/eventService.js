@@ -1,80 +1,48 @@
 const { readEvents, appendEvent } = require('../repositories/eventRepository');
+const { mapEventToRecord } = require('../utils/eventMapper');
+const { createLogger } = require('../utils/logger');
 
-/**
- * 保存事件
- */
+const logger = createLogger('EventService');
+const MAX_BATCH_SIZE = 1000;
+
 async function saveEvent(projectKey, events) {
-  try {
-    if (!projectKey || typeof projectKey !== 'string') {
-      throw new Error('项目Key无效');
-    }
+  if (!projectKey || typeof projectKey !== 'string') {
+    throw new Error('项目Key无效');
+  }
 
-    if (!Array.isArray(events) || events.length === 0) {
-      return 0;
-    }
+  if (!Array.isArray(events) || events.length === 0) {
+    return 0;
+  }
 
-    // 限制批量大小，防止内存溢出
-    if (events.length > 1000) {
-      throw new Error('单次批量保存事件数量不能超过1000');
-    }
+  if (events.length > MAX_BATCH_SIZE) {
+    throw new Error(`单次批量保存事件数量不能超过${MAX_BATCH_SIZE}`);
+  }
 
-    const allEvents = readEvents();
-    const maxId = allEvents.length > 0
-      ? Math.max(...allEvents.map(e => (e.id || 0)))
-      : 0;
+  const allEvents = readEvents();
+  const maxId = allEvents.length > 0
+    ? Math.max(...allEvents.map(e => e.id || 0))
+    : 0;
 
-    let newId = maxId;
-    let savedCount = 0;
-    const now = new Date().toISOString();
+  let newId = maxId;
+  let savedCount = 0;
 
-    for (const event of events) {
-      try {
-        if (!event || typeof event !== 'object') {
-          console.warn('跳过无效事件数据');
-          continue;
-        }
-
-        newId++;
-        const page = event.page || {};
-        const user = event.user || {};
-        const data = event.data || {};
-
-        // 验证并清理数据
-        const eventRecord = {
-          id: newId,
-          project_key: projectKey.substring(0, 100),
-          type: (event.type || 'unknown').substring(0, 50),
-          timestamp: event.timestamp || now,
-          page_url: (page.url || '').substring(0, 500),
-          page_path: (page.path || '').substring(0, 500),
-          page_title: (page.title || '').substring(0, 200),
-          page_host: (page.host || '').substring(0, 200),
-          user_ip: (user.ip || '').substring(0, 50),
-          user_agent: (user.userAgent || '').substring(0, 500),
-          user_language: (user.language || '').substring(0, 50),
-          user_platform: (user.platform || '').substring(0, 50),
-          screen_width: Math.max(0, Math.min(99999, parseInt(user.screenWidth) || 0)),
-          screen_height: Math.max(0, Math.min(99999, parseInt(user.screenHeight) || 0)),
-          viewport_width: Math.max(0, Math.min(99999, parseInt(user.viewportWidth) || 0)),
-          viewport_height: Math.max(0, Math.min(99999, parseInt(user.viewportHeight) || 0)),
-          referrer: (user.referrer || '').substring(0, 500),
-          event_data: JSON.stringify(data).substring(0, 5000),
-          created_at: now,
-        };
-
-        appendEvent(eventRecord);
-        savedCount++;
-      } catch (eventError) {
-        console.warn('保存单个事件失败:', eventError.message);
+  for (const event of events) {
+    try {
+      if (!event || typeof event !== 'object') {
+        logger.warn('跳过无效事件数据');
         continue;
       }
-    }
 
-    return savedCount;
-  } catch (error) {
-    console.error('保存事件失败:', error);
-    throw new Error('保存事件失败: ' + error.message);
+      newId++;
+      const eventRecord = mapEventToRecord(event, projectKey, newId);
+      appendEvent(eventRecord);
+      savedCount++;
+    } catch (error) {
+      logger.warn('保存单个事件失败', { error: error.message });
+    }
   }
+
+  return savedCount;
 }
 
 /**
@@ -144,16 +112,15 @@ async function getEvents({ projectKey, type, startTime, endTime, page = 1, pageS
       totalPages: Math.ceil(total / validatedPageSize),
     };
   } catch (error) {
-    console.error('获取事件列表失败:', error);
+    logger.error('获取事件列表失败', error);
     throw new Error('获取事件列表失败: ' + error.message);
   }
 }
 
-/**
- * 获取项目统计
- */
 async function getProjectStats(projectKey, startTime, endTime) {
-  let events = readEvents();
+  const { extractWebVitals, extractDeviceStats, aggregateErrors, calculateTimeTrend } = require('../utils/statsCalculator');
+  
+  const events = readEvents();
 
   events = events.filter(event => {
     if (event.project_key !== projectKey) return false;
@@ -190,16 +157,15 @@ async function getProjectStats(projectKey, startTime, endTime) {
   return {
     ...stats,
     topPages,
+    webVitals: extractWebVitals(pageviewEvents),
+    ...extractDeviceStats(events),
+    topErrors: aggregateErrors(events),
+    timeTrend: calculateTimeTrend(events),
   };
 }
 
-/**
- * 获取事件类型统计
- */
 async function getEventStats(projectKey, startTime, endTime) {
-  let events = readEvents();
-
-  events = events.filter(event => {
+  const events = readEvents().filter(event => {
     if (event.project_key !== projectKey) return false;
     if (startTime && event.timestamp < startTime) return false;
     if (endTime && event.timestamp > endTime) return false;

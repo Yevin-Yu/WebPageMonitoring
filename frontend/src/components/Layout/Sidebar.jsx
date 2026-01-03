@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 const menuItems = [
   { path: '/', label: '项目管理', icon: '📊' },
+  { path: '/monitoring', label: '项目监控', icon: '📈' },
 ];
 
 export function Sidebar() {

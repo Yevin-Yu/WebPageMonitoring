@@ -20,12 +20,10 @@ client.interceptors.request.use(
       }
       return config;
     } catch (error) {
-      console.error('请求拦截器错误:', error);
       return Promise.reject(error);
     }
   },
   (error) => {
-    console.error('请求配置错误:', error);
     return Promise.reject(error);
   }
 );

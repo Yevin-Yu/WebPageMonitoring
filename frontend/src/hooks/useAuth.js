@@ -38,14 +38,12 @@ export function useAuth() {
           setUser(response.data.user);
           return response.data;
         } catch (storageError) {
-          console.error('保存登录信息失败:', storageError);
           throw new Error('保存登录信息失败，请检查浏览器设置');
         }
       } else {
         throw new Error(response.data.error || '登录失败');
       }
     } catch (error) {
-      console.error('登录失败:', error);
       throw error;
     }
   };
@@ -68,7 +66,6 @@ export function useAuth() {
         throw new Error(response.data.error || '注册失败');
       }
     } catch (error) {
-      console.error('注册失败:', error);
       throw error;
     }
   };
@@ -77,7 +74,6 @@ export function useAuth() {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error('登出失败:', error);
     }
     localStorage.removeItem('token');
     localStorage.removeItem('user');

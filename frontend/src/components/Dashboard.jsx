@@ -1,63 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { projectsAPI } from '../api/projects';
+import React, { useState, useMemo } from 'react';
 import { LineChart } from './Charts/LineChart';
 import { PieChart } from './Charts/PieChart';
 import { BarChart } from './Charts/BarChart';
-import { getErrorMessage } from '../utils/errorHandler';
+import WebVitals from './Analytics/WebVitals';
+import DeviceBrowserStats from './Analytics/DeviceBrowserStats';
+import ErrorAnalysis from './Analytics/ErrorAnalysis';
+import { useStats } from '../hooks/useStats';
 
 function Dashboard({ projectKey }) {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState('24h');
+  const { stats, loading, error, refetch } = useStats(projectKey, timeRange);
 
-  useEffect(() => {
-    if (projectKey) {
-      loadStats();
-    }
-  }, [projectKey, timeRange]);
+  const eventTypeData = useMemo(() => {
+    if (!stats) return [];
+    return [
+      { name: '页面访问', value: stats.pageviews || 0 },
+      { name: '点击事件', value: stats.clicks || 0 },
+      { name: '错误事件', value: stats.errors || 0 },
+    ].filter(item => item.value > 0);
+  }, [stats?.pageviews, stats?.clicks, stats?.errors]);
 
-  const loadStats = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      if (!projectKey) {
-        throw new Error('项目Key无效');
-      }
-
-      const now = new Date();
-      let startTime;
-
-      switch (timeRange) {
-        case '24h':
-          startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case '7d':
-          startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case '30d':
-          startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startTime = null;
-      }
-
-      const response = await projectsAPI.getStats(projectKey, startTime?.toISOString(), undefined);
-      
-      if (!response || !response.data) {
-        throw new Error('返回数据格式错误');
-      }
-
-      setStats(response.data);
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      console.error('加载统计数据失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const topPagesData = useMemo(() => {
+    if (!stats?.topPages) return [];
+    return stats.topPages.slice(0, 10).map((page) => ({
+      name: page.page_title || page.page_url.substring(0, 20) + '...',
+      value: page.count,
+    }));
+  }, [stats?.topPages]);
 
   if (loading) {
     return <div className="loading">加载中...</div>;
@@ -67,7 +36,7 @@ function Dashboard({ projectKey }) {
     return (
       <div className="card">
         <div className="error">{error}</div>
-        <button className="btn btn-primary" onClick={loadStats} style={{ marginTop: '1rem' }}>
+        <button className="btn btn-primary" onClick={refetch} style={{ marginTop: '1rem' }}>
           重试
         </button>
       </div>
@@ -77,18 +46,6 @@ function Dashboard({ projectKey }) {
   if (!stats) {
     return <div className="error">无法加载统计数据</div>;
   }
-
-  // 准备图表数据
-  const eventTypeData = [
-    { name: '页面访问', value: stats.pageviews || 0 },
-    { name: '点击事件', value: stats.clicks || 0 },
-    { name: '错误事件', value: stats.errors || 0 },
-  ].filter(item => item.value > 0);
-
-  const topPagesData = (stats.topPages || []).slice(0, 10).map((page, index) => ({
-    name: page.page_title || page.page_url.substring(0, 20) + '...',
-    value: page.count,
-  }));
 
   return (
     <div className="dashboard">
@@ -161,6 +118,24 @@ function Dashboard({ projectKey }) {
         </div>
       </div>
 
+      {stats.timeTrend && stats.timeTrend.length > 0 && (
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <h3 className="table-title">访问趋势</h3>
+          <LineChart 
+            data={stats.timeTrend.map(item => ({
+              time: item.time,
+              pageviews: item.pageviews,
+              clicks: item.clicks,
+              errors: item.errors,
+            }))} 
+            title=""
+            xKey="time"
+            yKeys={['pageviews', 'clicks', 'errors']}
+            colors={['#1a1a1a', '#666', '#8b0000']}
+          />
+        </div>
+      )}
+
       <div className="charts-grid">
         <div className="chart-card">
           <PieChart data={eventTypeData} title="事件类型分布" />
@@ -169,6 +144,22 @@ function Dashboard({ projectKey }) {
           <BarChart data={topPagesData} title="热门页面 TOP 10" />
         </div>
       </div>
+
+      {stats.webVitals && (
+        <WebVitals webVitals={stats.webVitals} />
+      )}
+
+      {(stats.devices || stats.browsers || stats.os) && (
+        <DeviceBrowserStats 
+          devices={stats.devices} 
+          browsers={stats.browsers} 
+          os={stats.os} 
+        />
+      )}
+
+      {stats.topErrors && stats.topErrors.length > 0 && (
+        <ErrorAnalysis topErrors={stats.topErrors} />
+      )}
 
       {stats.topPages && stats.topPages.length > 0 && (
         <div className="table-card">

@@ -1,53 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { eventsAPI } from '../api/events';
-import { getErrorMessage } from '../utils/errorHandler';
+import React, { useState } from 'react';
+import { exportEvents } from '../utils/export';
+import { useEvents } from '../hooks/useEvents';
 import dayjs from 'dayjs';
 
+function formatVisitDuration(seconds) {
+  if (!seconds || seconds === 0) return '-';
+  if (seconds < 60) return `${seconds}秒`;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${minutes}分${secs}秒` : `${minutes}分钟`;
+}
+
 function EventList({ projectKey }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [filterType, setFilterType] = useState('');
-
-  useEffect(() => {
-    if (projectKey) {
-      loadEvents();
-    }
-  }, [projectKey, page, filterType]);
-
-  const loadEvents = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      if (!projectKey) {
-        throw new Error('项目Key无效');
-      }
-
-      const params = {
-        page: Math.max(1, page),
-        pageSize: 50,
-        type: filterType || undefined,
-      };
-
-      const response = await eventsAPI.list(projectKey, params);
-      
-      if (!response || !response.data) {
-        throw new Error('返回数据格式错误');
-      }
-
-      setEvents(Array.isArray(response.data.data) ? response.data.data : []);
-      setTotalPages(Math.max(1, response.data.totalPages || 1));
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      console.error('加载事件列表失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { events, totalPages, loading, error } = useEvents(projectKey, {
+    page,
+    type: filterType,
+  });
 
   const getEventTypeBadge = (type) => {
     const badges = {
@@ -62,39 +32,47 @@ function EventList({ projectKey }) {
     return <div className="loading">加载中...</div>;
   }
 
+  const handleExport = () => {
+    if (!events.length) return;
+    const filename = `events_${projectKey}_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`;
+    exportEvents(events, filename);
+  };
+
   if (error) {
     return (
       <div className="card">
         <div className="error">{error}</div>
-        <button className="btn btn-primary" onClick={loadEvents} style={{ marginTop: '1rem' }}>
-          重试
-        </button>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <label style={{ fontSize: '0.875rem' }}>事件类型筛选:</label>
-        <select
-          className="form-input"
-          value={filterType}
-          onChange={(e) => {
-            setFilterType(e.target.value);
-            setPage(1);
-          }}
-          style={{ width: 'auto', padding: '0.25rem 0.5rem' }}
-        >
-          <option value="">全部</option>
-          <option value="pageview">页面访问</option>
-          <option value="click">点击事件</option>
-          <option value="error">错误事件</option>
-        </select>
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <label style={{ fontSize: '0.875rem' }}>事件类型筛选:</label>
+          <select
+            className="form-input"
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setPage(1);
+            }}
+            style={{ width: 'auto', padding: '0.25rem 0.5rem' }}
+          >
+            <option value="">全部</option>
+            <option value="pageview">页面访问</option>
+            <option value="click">点击事件</option>
+            <option value="error">错误事件</option>
+          </select>
+        </div>
+        <button className="btn btn-primary" onClick={handleExport} style={{ fontSize: '0.8125rem' }}>
+          📥 导出CSV
+        </button>
       </div>
 
       {events.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+        <div className="empty-state" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
           暂无事件数据
         </div>
       ) : (
@@ -103,48 +81,92 @@ function EventList({ projectKey }) {
             <table className="table">
               <thead>
                 <tr>
-                  <th>时间</th>
+                  <th>访问时间</th>
+                  <th>地域</th>
+                  <th>来源</th>
+                  <th>入口页面</th>
+                  <th>搜索词</th>
+                  <th>访问IP</th>
+                  <th>访客标识码</th>
+                  <th>访问时长</th>
+                  <th>访问页数</th>
                   <th>类型</th>
-                  <th>页面 URL</th>
-                  <th>IP 地址</th>
-                  <th>User Agent</th>
-                  <th>详细信息</th>
+                  <th>当前页面</th>
                 </tr>
               </thead>
               <tbody>
                 {events.map((event) => (
-                  <tr key={event.id}>
-                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
-                      {dayjs(event.timestamp).format('YYYY-MM-DD HH:mm:ss')}
-                    </td>
-                    <td>
-                      <span className={`badge ${getEventTypeBadge(event.type)}`}>
-                        {event.type}
-                      </span>
-                    </td>
-                    <td>
-                      <a
-                        href={event.page_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#333', fontSize: '0.875rem', wordBreak: 'break-all', textDecoration: 'underline' }}
-                      >
-                        {event.page_url}
-                      </a>
-                    </td>
-                    <td style={{ fontSize: '0.875rem' }}>{event.user_ip || '-'}</td>
-                    <td style={{ fontSize: '0.875rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {event.user_agent || '-'}
-                    </td>
-                    <td>
-                      <details style={{ fontSize: '0.875rem' }}>
-                        <summary style={{ cursor: 'pointer', color: '#333', textDecoration: 'underline' }}>查看</summary>
-                        <pre style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#f5f5f5', borderRadius: '4px', fontSize: '0.75rem', overflow: 'auto', maxHeight: '200px' }}>
-                          {JSON.stringify(event.event_data, null, 2)}
-                        </pre>
-                      </details>
-                    </td>
-                  </tr>
+                    <tr key={event.id}>
+                      <td style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
+                        {dayjs(event.timestamp).format('YYYY-MM-DD HH:mm:ss')}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem' }}>
+                        {event.region || '-'}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', maxWidth: '120px' }}>
+                        {event.source || '-'}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', maxWidth: '200px' }}>
+                        {event.entry_page ? (
+                          <a
+                            href={event.entry_page}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="table-link"
+                            style={{ fontSize: '0.8125rem' }}
+                            title={event.entry_page}
+                          >
+                            {event.entry_page.length > 30 
+                              ? event.entry_page.substring(0, 30) + '...' 
+                              : event.entry_page}
+                          </a>
+                        ) : '-'}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', maxWidth: '150px' }}>
+                        {event.search_keyword || '-'}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem' }}>
+                        {event.user_ip || '-'}
+                      </td>
+                      <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: '150px' }}>
+                        {event.visitor_id ? (
+                          <span title={event.visitor_id}>
+                            {event.visitor_id.length > 20 
+                              ? event.visitor_id.substring(0, 20) + '...' 
+                              : event.visitor_id}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+                        {formatVisitDuration(event.visit_duration)}
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', textAlign: 'center' }}>
+                        {event.page_count || '-'}
+                      </td>
+                      <td>
+                        <span className={`badge ${getEventTypeBadge(event.type)}`}>
+                          {event.type === 'pageview' ? '页面访问' : 
+                           event.type === 'click' ? '点击' : 
+                           event.type === 'error' ? '错误' : event.type}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.8125rem', maxWidth: '200px' }}>
+                        {event.page_url ? (
+                          <a
+                            href={event.page_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="table-link"
+                            style={{ fontSize: '0.8125rem' }}
+                            title={event.page_url}
+                          >
+                            {event.page_url.length > 40 
+                              ? event.page_url.substring(0, 40) + '...' 
+                              : event.page_url}
+                          </a>
+                        ) : '-'}
+                      </td>
+                    </tr>
                 ))}
               </tbody>
             </table>

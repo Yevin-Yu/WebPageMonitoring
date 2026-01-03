@@ -1,39 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectsAPI } from '../api/projects';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useProjects } from '../hooks/useProjects';
 
 function ProjectList() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { projects, loading, error, refetch } = useProjects();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [submitError, setSubmitError] = useState(null);
-
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      const response = await projectsAPI.list();
-      
-      if (!response || !response.data) {
-        throw new Error('返回数据格式错误');
-      }
-
-      setProjects(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      console.error('加载项目列表失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,7 +39,6 @@ function ProjectList() {
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       setSubmitError(errorMessage);
-      console.error('创建项目失败:', error);
     }
   };
 
@@ -76,7 +50,7 @@ function ProjectList() {
     return (
       <div className="card">
         <div className="error">{error}</div>
-        <button className="btn btn-primary" onClick={loadProjects} style={{ marginTop: '1rem' }}>
+        <button className="btn btn-primary" onClick={refetch} style={{ marginTop: '1rem' }}>
           重试
         </button>
       </div>
@@ -94,7 +68,11 @@ function ProjectList() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginBottom: '2rem', padding: '1.5rem 0', borderTop: '1px solid #e5e5e5', borderBottom: '1px solid #e5e5e5' }}>
+          <form 
+            onSubmit={handleSubmit} 
+            className="form-expand"
+            style={{ marginBottom: '2rem', padding: '1.5rem 0', borderTop: '1px solid rgba(0, 0, 0, 0.08)', borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}
+          >
             {submitError && (
               <div className="error" style={{ marginBottom: '1rem' }}>
                 {submitError}
@@ -129,7 +107,7 @@ function ProjectList() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="card">
+        <div className="card empty-state">
           <p style={{ textAlign: 'center', color: '#666' }}>还没有项目，创建一个新项目开始监控吧！</p>
         </div>
       ) : (

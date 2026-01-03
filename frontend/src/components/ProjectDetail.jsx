@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectsAPI } from '../api/projects';
-import Dashboard from './Dashboard';
-import EventList from './EventList';
 import { getErrorMessage } from '../utils/errorHandler';
 
 function ProjectDetail() {
   const { projectKey } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (projectKey) {
@@ -50,6 +48,58 @@ function ProjectDetail() {
     }
   };
 
+  const getPluginUrl = () => {
+    // 获取当前页面的协议和主机
+    const protocol = window.location.protocol;
+    const host = window.location.hostname;
+    const port = window.location.port;
+    const baseUrl = port ? `${protocol}//${host}:${port}` : `${protocol}//${host}`;
+    return `${baseUrl}/plugin/monitoring.js`;
+  };
+
+  const getApiUrl = () => {
+    // API URL 通常是后端地址
+    const protocol = window.location.protocol;
+    const host = window.location.hostname;
+    // 默认后端端口是3001，可以根据实际情况调整
+    const apiPort = '3001';
+    return `${protocol}//${host}:${apiPort}`;
+  };
+
+  const handleCopyCode = async () => {
+    const embedCode = getEmbedCode();
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+    }
+  };
+
+  const getEmbedCode = () => {
+    const pluginUrl = getPluginUrl();
+    const apiUrl = getApiUrl();
+    
+    return `<script>
+  (function() {
+    var script = document.createElement('script');
+    script.src = '${pluginUrl}';
+    script.onload = function() {
+      window.WebPageMonitoring.init({
+        apiUrl: '${apiUrl}',
+        projectKey: '${projectKey}',
+        autoTrack: true,
+        trackPageView: true,
+        trackClick: true,
+        trackError: true,
+        trackPerformance: true
+      });
+    };
+    document.head.appendChild(script);
+  })();
+</script>`;
+  };
+
   if (loading) {
     return <div className="loading">加载中...</div>;
   }
@@ -81,65 +131,132 @@ function ProjectDetail() {
     );
   }
 
-  const embedCode = `<script>
-  (function() {
-    var script = document.createElement('script');
-    script.src = 'http://localhost:3000/plugin/monitoring.js';
-    script.onload = function() {
-      window.WebPageMonitoring.init({
-        apiUrl: 'http://localhost:3001',
-        projectKey: '${projectKey}',
-        autoTrack: true,
-        trackPageView: true,
-        trackClick: true,
-        trackError: true,
-        trackPerformance: true
-      });
-    };
-    document.head.appendChild(script);
-  })();
-</script>`;
+  const embedCode = getEmbedCode();
 
   return (
     <div>
       <div className="card">
-        <h2 className="card-title">{project.name}</h2>
-        <p style={{ color: '#666', marginBottom: '1rem' }}>{project.description || '无描述'}</p>
-        
-        <div style={{ marginBottom: '1rem' }}>
-          <strong>项目 Key:</strong>
-          <code className="code-block">{project.key}</code>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <h2 className="card-title" style={{ marginBottom: '0.5rem' }}>{project.name}</h2>
+            {project.description && (
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>{project.description}</p>
+            )}
+          </div>
+          <button className="btn" onClick={() => navigate('/')}>
+            返回列表
+          </button>
+        </div>
+
+        <div style={{ 
+          padding: '1.5rem', 
+          background: 'rgba(102, 126, 234, 0.05)', 
+          borderRadius: '12px', 
+          marginBottom: '2rem',
+          border: '1px solid rgba(102, 126, 234, 0.1)'
+        }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 500 }}>
+              项目 Key
+            </div>
+            <code className="code-block" style={{ 
+              display: 'block',
+              padding: '0.75rem 1rem',
+              background: 'white',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              fontFamily: 'monospace',
+              wordBreak: 'break-all'
+            }}>
+              {project.key}
+            </code>
+          </div>
         </div>
 
         <div>
-          <strong>嵌入代码:</strong>
-          <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-            将以下代码添加到你的网站 HTML 中（通常在 &lt;/head&gt; 之前）:
-          </p>
-          <pre className="code-block" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-            {embedCode}
-          </pre>
-        </div>
-      </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
+              嵌入代码
+            </h3>
+            <button 
+              className={`btn ${copied ? 'btn-primary' : ''}`}
+              onClick={handleCopyCode}
+              style={{ fontSize: '0.875rem' }}
+            >
+              {copied ? '✓ 已复制' : '📋 复制代码'}
+            </button>
+          </div>
+          
+          <div style={{ 
+            padding: '1.25rem', 
+            background: 'rgba(15, 23, 42, 0.05)', 
+            borderRadius: '12px',
+            border: '1px solid rgba(0, 0, 0, 0.06)',
+            position: 'relative'
+          }}>
+            <p style={{ 
+              color: '#64748b', 
+              fontSize: '0.875rem', 
+              marginBottom: '1rem',
+              lineHeight: '1.6'
+            }}>
+              将以下代码添加到你的网站 HTML 中（通常在 <code style={{ 
+                background: 'rgba(0, 0, 0, 0.05)', 
+                padding: '0.125rem 0.375rem', 
+                borderRadius: '4px',
+                fontSize: '0.8em'
+              }}>&lt;/head&gt;</code> 之前）:
+            </p>
+            <pre className="code-block" style={{ 
+              whiteSpace: 'pre-wrap', 
+              wordBreak: 'break-all',
+              margin: 0,
+              padding: '1.25rem',
+              background: '#1e293b',
+              color: '#e2e8f0',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              lineHeight: '1.6',
+              overflow: 'auto',
+              maxHeight: '400px'
+            }}>
+              {embedCode}
+            </pre>
+          </div>
 
-      <div className="card">
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            数据概览
-          </button>
-          <button
-            className={`tab ${activeTab === 'events' ? 'active' : ''}`}
-            onClick={() => setActiveTab('events')}
-          >
-            事件列表
-          </button>
+          <div style={{ 
+            marginTop: '1.5rem', 
+            padding: '1rem', 
+            background: 'rgba(34, 197, 94, 0.1)', 
+            borderRadius: '8px',
+            border: '1px solid rgba(34, 197, 94, 0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'start', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>💡</span>
+              <div>
+                <div style={{ fontWeight: 600, color: '#16a34a', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                  使用说明
+                </div>
+                <ul style={{ 
+                  margin: 0, 
+                  paddingLeft: '1.25rem', 
+                  color: '#64748b', 
+                  fontSize: '0.875rem',
+                  lineHeight: '1.8'
+                }}>
+                  <li>将代码复制到你的网站 HTML 的 <code style={{ 
+                    background: 'rgba(0, 0, 0, 0.05)', 
+                    padding: '0.125rem 0.375rem', 
+                    borderRadius: '4px',
+                    fontSize: '0.8em'
+                  }}>&lt;/head&gt;</code> 标签之前</li>
+                  <li>代码会自动加载监控脚本并开始收集数据</li>
+                  <li>你可以在"项目监控"页面查看收集到的数据</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {activeTab === 'dashboard' && <Dashboard projectKey={projectKey} />}
-        {activeTab === 'events' && <EventList projectKey={projectKey} />}
       </div>
     </div>
   );

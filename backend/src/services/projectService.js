@@ -1,11 +1,11 @@
 const { readProjects, writeProjects } = require('../repositories/projectRepository');
 const { validateProjectName } = require('../utils/validator');
 const { ValidationError } = require('../utils/errors');
+const { createLogger } = require('../utils/logger');
 const crypto = require('crypto');
 
-/**
- * 创建项目
- */
+const logger = createLogger('ProjectService');
+
 async function createProject(name, description = '', userId = null) {
   try {
     // 验证输入
@@ -54,9 +54,6 @@ async function createProject(name, description = '', userId = null) {
   }
 }
 
-/**
- * 根据用户ID获取项目列表
- */
 async function getProjectsByUserId(userId) {
   try {
     if (!userId || isNaN(userId) || userId <= 0) {
@@ -97,7 +94,7 @@ async function verifyProjectOwnership(userId, projectKey) {
     const projects = await getProjectsByUserId(userId);
     return projects.some(p => p.key === projectKey);
   } catch (error) {
-    console.error('验证项目所有权失败:', error);
+    logger.error('验证项目所有权失败', error);
     return false;
   }
 }

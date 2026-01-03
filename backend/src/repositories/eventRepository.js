@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { escapeCSV, parseCSVLine } = require('../utils/csvParser');
+const { createLogger } = require('../utils/logger');
 
+const logger = createLogger('EventRepository');
 const DATA_DIR = path.join(__dirname, '../../data');
 const EVENTS_FILE = path.join(DATA_DIR, 'events.csv');
 
@@ -49,17 +51,26 @@ function readEvents() {
             referrer: values[16] || '',
             event_data: values[17] || '{}',
             created_at: values[18] || new Date().toISOString(),
+            // 新增字段
+            visitor_id: values[19] || '',
+            session_id: values[20] || '',
+            entry_page: values[21] || '',
+            source: values[22] || '',
+            search_keyword: values[23] || '',
+            visit_duration: parseInt(values[24]) || 0,
+            page_count: parseInt(values[25]) || 0,
+            region: values[26] || '',
           });
         }
       } catch (lineError) {
-        console.warn(`解析事件数据第 ${i + 1} 行失败:`, lineError.message);
+        logger.warn(`解析事件数据第 ${i + 1} 行失败`, { error: lineError.message });
         continue;
       }
     }
 
     return events;
   } catch (error) {
-    console.error('读取事件数据失败:', error);
+    logger.error('读取事件数据失败', error);
     throw new Error('读取事件数据失败: ' + error.message);
   }
 }
@@ -77,7 +88,7 @@ function appendEvent(event) {
 
     // 如果文件不存在，先写入表头
     if (!fs.existsSync(EVENTS_FILE)) {
-      const header = 'id,project_key,type,timestamp,page_url,page_path,page_title,page_host,user_ip,user_agent,user_language,user_platform,screen_width,screen_height,viewport_width,viewport_height,referrer,event_data,created_at\n';
+      const header = 'id,project_key,type,timestamp,page_url,page_path,page_title,page_host,user_ip,user_agent,user_language,user_platform,screen_width,screen_height,viewport_width,viewport_height,referrer,event_data,created_at,visitor_id,session_id,entry_page,source,search_keyword,visit_duration,page_count,region\n';
       fs.writeFileSync(EVENTS_FILE, header, 'utf8');
     }
 
@@ -101,11 +112,20 @@ function appendEvent(event) {
       escapeCSV(event.referrer || ''),
       escapeCSV(event.event_data || '{}'),
       escapeCSV(event.created_at || new Date().toISOString()),
+      // 新增字段
+      escapeCSV(event.visitor_id || ''),
+      escapeCSV(event.session_id || ''),
+      escapeCSV(event.entry_page || ''),
+      escapeCSV(event.source || ''),
+      escapeCSV(event.search_keyword || ''),
+      event.visit_duration || 0,
+      event.page_count || 0,
+      escapeCSV(event.region || ''),
     ].join(',') + '\n';
 
     fs.appendFileSync(EVENTS_FILE, line, 'utf8');
   } catch (error) {
-    console.error('追加事件数据失败:', error);
+    logger.error('追加事件数据失败', error);
     throw new Error('追加事件数据失败: ' + error.message);
   }
 }

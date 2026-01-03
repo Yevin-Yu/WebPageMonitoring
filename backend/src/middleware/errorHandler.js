@@ -1,17 +1,20 @@
 const config = require('../config');
 const { AppError } = require('../utils/errors');
+const { createLogger } = require('../utils/logger');
+
+const logger = createLogger('ErrorHandler');
 
 /**
  * 统一错误处理中间件
  */
 function errorHandler(err, req, res, next) {
   // 记录错误日志
-  console.error('Error:', {
+  logger.error('Request error', {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
-    timestamp: new Date().toISOString(),
+    ip: req.ip,
   });
 
   // 如果是已知错误类型

@@ -1,28 +1,21 @@
 # 依赖
 node_modules/
-package-lock.json
-yarn.lock
-
-# 数据文件
-backend/data/
-*.db
-*.db-journal
-*.csv
-
-# 构建输出
-frontend/dist/
-frontend/build/
+*/node_modules/
 
 # 环境变量
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env
 
-# 日志
+# 构建输出
+dist/
+build/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+
+# 数据文件（可选，根据需求决定是否提交）
+# backend/data/*.csv
 
 # IDE
 .vscode/
@@ -31,7 +24,15 @@ yarn-error.log*
 *.swo
 *~
 
-# OS
+# 操作系统
 .DS_Store
 Thumbs.db
 
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 测试覆盖率
+coverage/
+.nyc_output/
