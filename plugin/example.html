@@ -1,97 +1,536 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>监控插件测试页面</title>
+    <title>监控插件示例</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
 
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-            cursor: pointer;
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
         }
 
-        .error-btn {
-            background: #ff4444;
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status-item.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-item.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-item.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .status-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #666;
+            margin-right: 10px;
+        }
+
+        .log-success {
+            color: #28a745;
+        }
+
+        .log-error {
+            color: #dc3545;
+        }
+
+        .log-info {
+            color: #17a2b8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
             color: white;
         }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            background: #e7eaff;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #856404;
+            color: #856404;
+        }
     </style>
-
-    <!-- 监控插件嵌入代码 -->
-    <!-- 
-      使用方式：
-      在 script 标签的 src 属性中添加参数即可，插件会自动初始化
-      
-      格式：
-      <script src="插件地址?key=项目Key&apiUrl=API地址"></script>
-      
-      示例：
-      <script src="http://web.yuwb.cn/plugin/monitoring.js?key=0346c20e5580a8d83b0372089bbfdd8d&apiUrl=http://web.yuwb.cn"></script>
-    -->
-    <script src="http://web.yuwb.cn/plugin/monitoring.js?key=0346c20e5580a8d83b0372089bbfdd8d&apiUrl=http://web.yuwb.cn"></script>
 </head>
-
 <body>
-    <h1>监控插件测试页面</h1>
-    <p>这是一个测试页面，用于验证监控插件是否正常工作。</p>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 WebPage Monitoring</h1>
+            <p>前端监控插件示例页面</p>
+        </div>
 
-    <h2>测试功能</h2>
-    <button onclick="testClick()">测试点击事件</button>
-    <button onclick="testError()" class="error-btn">测试错误捕获</button>
-    <button onclick="testCustomEvent()">测试自定义事件</button>
+        <div class="alert alert-info">
+            <strong>💡 提示：</strong>打开浏览器控制台（F12）查看详细的插件运行日志
+        </div>
 
-    <h2>使用说明</h2>
-    <ol>
-        <li>请先在前端面板创建项目并获取项目 Key</li>
-        <li><strong>方式1（推荐）</strong>：通过URL参数加载
-            <ul>
-                <li>在页面URL后添加参数：<code>?key=项目Key&apiUrl=API地址</code></li>
-                <li>例如：<code>example.html?key=0346c20e5580a8d83b0372089bbfdd8d&apiUrl=http://web.yuwb.cn</code></li>
-                <li>插件会自动从URL参数读取配置，无需额外代码</li>
-            </ul>
-        </li>
-        <li><strong>方式2</strong>：通过配置对象
-            <ul>
-                <li>修改页面中的 <code>projectKey</code> 和 <code>apiUrl</code> 配置</li>
-                <li>开发环境：apiUrl 设置为 'http://localhost:3002'</li>
-                <li>生产环境：apiUrl 设置为同域地址，如 'http://web.yuwb.cn'（无需端口号）</li>
-            </ul>
-        </li>
-        <li>打开此页面，点击上面的按钮测试各种功能</li>
-        <li>在前端面板查看收集到的数据</li>
-    </ol>
+        <div class="status">
+            <div class="status-item pending" id="pluginStatus">
+                <div class="status-label">插件状态</div>
+                <div class="status-value" id="pluginStatusText">加载中...</div>
+            </div>
+            <div class="status-item pending" id="apiStatus">
+                <div class="status-label">API 状态</div>
+                <div class="status-value" id="apiStatusText">未测试</div>
+            </div>
+            <div class="status-item pending" id="dataStatus">
+                <div class="status-label">数据发送</div>
+                <div class="status-value" id="dataStatusText">等待中...</div>
+            </div>
+            </div>
+
+        <div class="section">
+            <h2 class="section-title">配置信息</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">项目 Key</div>
+                    <div class="info-value" id="projectKey">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">API 地址</div>
+                    <div class="info-value" id="apiUrl">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">访客 ID</div>
+                    <div class="info-value" id="visitorId">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">会话 ID</div>
+                    <div class="info-value" id="sessionId">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">嵌入代码</h2>
+            <p style="color: #666; margin-bottom: 10px;">
+                在您的网站中添加以下代码即可启用监控：
+            </p>
+            <div class="code-block" id="embedCode">
+&lt;script src="http://localhost:3000/plugin/monitoring.js"
+        data-project-key="4289a8a947fa543c5fa72745d2bac132"
+        data-api-url="http://localhost:3002"
+        async&gt;&lt;/script&gt;
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">测试操作</h2>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="testApiConnection()">测试 API 连接</button>
+                <button class="btn btn-primary" onclick="sendTestEvent()">发送测试事件</button>
+                <button class="btn btn-secondary" onclick="simulatePageView()">模拟页面访问</button>
+                <button class="btn btn-secondary" onclick="simulateError()">模拟错误事件</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">运行日志</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-item">
+                    <span class="log-time">[系统]</span>
+                    <span class="log-info">等待插件加载...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 监控插件：修改下面的项目Key为您的项目Key -->
+    <script src="http://localhost:3000/plugin/monitoring.js"
+            data-project-key="4289a8a947fa543c5fa72745d2bac132"
+            data-api-url="http://localhost:3002"
+            data-debug="true"
+            async></script>
 
     <script>
-        function testClick() {
-            alert('点击事件已触发，请在前端面板查看数据');
-        }
+        // 日志工具
+        function addLog(message, type = 'info') {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'log-item';
 
-        function testError() {
-            // 故意触发一个错误
-            throw new Error('这是一个测试错误');
-        }
+            const typeClass = type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : 'log-info';
+            item.innerHTML = `<span class="log-time">[${time}]</span><span class="${typeClass}">${message}</span>`;
 
-        function testCustomEvent() {
-            if (window.WebPageMonitoring) {
-                window.WebPageMonitoring.track('custom', {
-                    action: 'test',
-                    message: '这是一个自定义事件'
-                });
-                alert('自定义事件已发送');
-            } else {
-                alert('监控插件未加载');
+            container.insertBefore(item, container.firstChild);
+
+            // 保持最多20条日志
+            while (container.children.length > 20) {
+                container.removeChild(container.lastChild);
             }
         }
+
+        // 更新状态
+        function updateStatus(elementId, text, status) {
+            const element = document.getElementById(elementId);
+            const textElement = document.getElementById(elementId + 'Text');
+
+            element.className = `status-item ${status}`;
+            textElement.textContent = text;
+        }
+
+        // 显示配置信息
+        function showConfig() {
+            addLog('页面加载完成，检查插件状态...');
+
+            setTimeout(() => {
+                if (window.WebPageMonitoring) {
+                    const config = window.WebPageMonitoring.config;
+
+                    document.getElementById('projectKey').textContent = config.projectKey || '未设置';
+                    document.getElementById('apiUrl').textContent = config.apiUrl || '未设置';
+                    document.getElementById('visitorId').textContent = localStorage.getItem('wpm_visitor_id') || '未生成';
+
+                    const sessionKey = 'wpm_session_' + config.projectKey;
+                    try {
+                        const sessionData = sessionStorage.getItem(sessionKey);
+                        if (sessionData) {
+                            const session = JSON.parse(sessionData);
+                            document.getElementById('sessionId').textContent = session.sessionId?.substring(0, 20) + '...' || '未生成';
+                        }
+                    } catch (e) {
+                        document.getElementById('sessionId').textContent = '读取失败';
+                    }
+
+                    updateStatus('pluginStatus', '已加载', 'success');
+                    addLog('监控插件加载成功', 'success');
+                    addLog(`项目: ${config.projectKey}`, 'info');
+                    addLog(`API: ${config.apiUrl}`, 'info');
+
+                    // 5秒后检查数据发送状态
+                    setTimeout(checkDataStatus, 5000);
+                } else {
+                    updateStatus('pluginStatus', '加载失败', 'error');
+                    addLog('插件未加载，请检查脚本路径', 'error');
+                }
+            }, 1000);
+        }
+
+        // 检查数据发送状态
+        function checkDataStatus() {
+            // 通过检查 localStorage 来判断是否已发送数据
+            const visitorId = localStorage.getItem('wpm_visitor_id');
+            if (visitorId) {
+                updateStatus('dataStatus', '已发送', 'success');
+                addLog('监控数据已发送到服务器', 'success');
+            } else {
+                updateStatus('dataStatus', '未发送', 'error');
+                addLog('监控数据未发送，请检查配置', 'error');
+            }
+        }
+
+        // 测试 API 连接
+        async function testApiConnection() {
+            addLog('开始测试 API 连接...');
+            const apiUrl = document.getElementById('apiUrl').textContent;
+            const projectKey = document.getElementById('projectKey').textContent;
+
+            if (!apiUrl || apiUrl === '未设置') {
+                addLog('API 地址未设置', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}/api/events`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        projectKey: projectKey,
+                        events: [{
+                            type: 'test',
+                            timestamp: new Date().toISOString(),
+                            page: {
+                                url: window.location.href,
+                                title: document.title,
+                            },
+                        }]
+                    })
+                });
+
+                if (response.ok) {
+                    addLog(`API 连接成功: ${response.status}`, 'success');
+                    updateStatus('apiStatus', '正常', 'success');
+                } else {
+                    addLog(`API 返回错误: ${response.status} ${response.statusText}`, 'error');
+                    updateStatus('apiStatus', '错误', 'error');
+                }
+            } catch (error) {
+                addLog(`API 连接失败: ${error.message}`, 'error');
+                updateStatus('apiStatus', '连接失败', 'error');
+            }
+        }
+
+        // 发送测试事件
+        function sendTestEvent() {
+            addLog('发送测试事件...');
+
+            if (window.WebPageMonitoring) {
+                window.WebPageMonitoring.track('test', {
+                    message: '这是手动触发的测试事件',
+                    timestamp: new Date().toISOString()
+                });
+                addLog('测试事件已加入发送队列', 'success');
+            } else {
+                addLog('插件未加载，无法发送事件', 'error');
+            }
+        }
+
+        // 模拟页面访问
+        function simulatePageView() {
+            addLog('模拟新的页面访问...');
+
+            if (window.WebPageMonitoring) {
+                window.WebPageMonitoring.trackPageView();
+                addLog('页面访问事件已发送', 'success');
+            } else {
+                addLog('插件未加载', 'error');
+            }
+        }
+
+        // 模拟错误
+        function simulateError() {
+            addLog('模拟错误事件...');
+
+            if (window.WebPageMonitoring) {
+                try {
+                    throw new Error('这是一个测试错误');
+                } catch (error) {
+                    // 注意：需要先在插件配置中启用 trackError
+                    addLog('错误已创建，但插件默认不追踪错误', 'info');
+                    addLog('如需追踪错误，请在插件配置中启用 trackError', 'info');
+                }
+            }
+        }
+
+        // 页面加载时初始化
+        showConfig();
+
+        // 监听页面错误
+        window.addEventListener('error', (e) => {
+            addLog(`页面错误: ${e.message}`, 'error');
+        });
+
+        // 拦截 console.log
+        const originalLog = console.log;
+        console.log = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('[WebPage Monitoring]')) {
+                addLog(message.replace('[WebPage Monitoring] ', ''), 'info');
+            }
+            originalLog.apply(console, args);
+        };
+
+        // 拦截 console.error
+        const originalError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('[WebPage Monitoring]')) {
+                addLog(message.replace('[WebPage Monitoring] ', ''), 'error');
+            }
+            originalError.apply(console, args);
+        };
+
+        // 页面可见性变化时记录
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                addLog('页面隐藏，待发送数据将被刷新', 'info');
+            } else {
+                addLog('页面重新可见', 'info');
+            }
+        });
     </script>
 </body>
-
 </html>

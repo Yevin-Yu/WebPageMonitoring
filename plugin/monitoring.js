@@ -111,6 +111,7 @@
         trackPerformance: false,
         batchSize: 10,
         flushInterval: 5000,
+        debug: false, // 调试模式
     };
 
     // 数据队列
@@ -460,7 +461,10 @@
      */
     function sendData(events) {
         if (!config.apiUrl || !config.projectKey) {
-            console.warn('监控插件未正确配置 apiUrl 或 projectKey');
+            console.error('[WebPage Monitoring] 未正确配置 apiUrl 或 projectKey', {
+                apiUrl: config.apiUrl,
+                projectKey: config.projectKey
+            });
             return;
         }
 
@@ -469,9 +473,12 @@
             events: events,
         };
 
-        // 优先使用 fetch，避免被广告拦截器拦截
-        // 使用 text/plain 作为 Content-Type 可以降低被拦截的概率
         const url = config.apiUrl + '/api/events';
+
+        if (config.debug) {
+            console.log('[WebPage Monitoring] 发送数据到:', url);
+            console.log('[WebPage Monitoring] 数据内容:', payload);
+        }
 
         fetch(url, {
             method: 'POST',
@@ -484,23 +491,22 @@
         })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                return response.json();
+                return response.json().catch(() => ({}));
             })
             .then(data => {
-                // 数据发送成功
                 if (config.debug) {
-                    console.log('监控数据发送成功:', data);
+                    console.log('[WebPage Monitoring] 数据发送成功:', data);
                 }
             })
             .catch((error) => {
-                // 如果是被客户端拦截的错误，提供更友好的提示
-                if (error.message && error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-                    console.warn('监控数据发送被浏览器扩展拦截，请检查广告拦截器设置');
-                } else {
-                    console.error('监控数据发送失败:', error);
-                }
+                console.error('[WebPage Monitoring] 数据发送失败:', error.message);
+                console.error('[WebPage Monitoring] API URL:', url);
+                console.error('[WebPage Monitoring] 请检查：');
+                console.error('  1. 后端服务是否运行在:', config.apiUrl);
+                console.error('  2. CORS配置是否正确');
+                console.error('  3. 网络连接是否正常');
             });
     }
 
@@ -608,28 +614,41 @@
      * @param {string} [options.projectKey] - 项目 Key（可选，可从URL参数 ?key=xxx 或 ?projectKey=xxx 获取）
      * @param {boolean} [options.autoTrack=true] - 是否自动追踪
      * @param {boolean} [options.trackPageView=true] - 是否追踪页面访问
+     * @param {boolean} [options.debug=false] - 是否启用调试模式
      */
     function init(options = {}) {
-        // 先从URL参数获取配置
-        const urlConfig = getConfigFromUrl();
-        
-        // 合并配置：URL参数 < 传入的options < 默认config
-        Object.assign(config, urlConfig, options);
+        // 先从 script 标签获取配置
+        const scriptConfig = getConfigFromScript();
+
+        // 合并配置：script标签 < 传入的options < 默认config
+        Object.assign(config, scriptConfig, options);
+
+        console.log('[WebPage Monitoring] 初始化配置:', {
+            apiUrl: config.apiUrl,
+            projectKey: config.projectKey,
+            debug: config.debug
+        });
 
         if (!config.apiUrl || !config.projectKey) {
-            console.error('监控插件初始化失败: 缺少 apiUrl 或 projectKey');
-            console.error('请通过以下方式之一提供配置：');
-            console.error('1. URL参数：?key=项目Key&apiUrl=API地址');
-            console.error('2. 配置对象：WebPageMonitoring.init({ projectKey: "xxx", apiUrl: "xxx" })');
+            console.error('[WebPage Monitoring] 初始化失败: 缺少必需配置');
+            console.error('[WebPage Monitoring] 当前配置:', config);
+            console.error('[WebPage Monitoring] 请确保 script 标签包含 data-project-key 属性');
+            console.error('[WebPage Monitoring] 示例: <script src="..." data-project-key="your-key">');
             return;
         }
 
+        console.log('[WebPage Monitoring] 初始化成功');
+        console.log('[WebPage Monitoring] API地址:', config.apiUrl);
+        console.log('[WebPage Monitoring] 项目Key:', config.projectKey);
+
         // 初始化会话和访客标识
-        getVisitorId();
+        const visitorId = getVisitorId();
+        console.log('[WebPage Monitoring] 访客ID:', visitorId);
         initSession();
 
         // 追踪页面访问
         if (config.trackPageView) {
+            console.log('[WebPage Monitoring] 开始追踪页面访问');
             trackPageView();
 
             // 监听路由变化（适用于 SPA）
@@ -638,6 +657,9 @@
                 const currentUrl = window.location.href;
                 if (currentUrl !== lastUrl) {
                     lastUrl = currentUrl;
+                    if (config.debug) {
+                        console.log('[WebPage Monitoring] 检测到路由变化');
+                    }
                     setTimeout(trackPageView, 0);
                 }
             });
