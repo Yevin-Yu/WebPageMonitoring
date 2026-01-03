@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监控插件测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .error-btn {
+            background: #ff4444;
+            color: white;
+        }
+    </style>
+
+    <!-- 监控插件嵌入代码 -->
+    <script>
+        (function () {
+            var script = document.createElement('script');
+            script.src = 'http://localhost:3000/plugin/monitoring.js';
+            script.onload = function () {
+                window.WebPageMonitoring.init({
+                    apiUrl: 'http://localhost:3001',
+                    projectKey: '5aaf8d7e700934e77a32ea72267e0ee9', // 请替换为你的项目 Key
+                    autoTrack: true,
+                    trackPageView: true,
+                    trackClick: true,
+                    trackError: true,
+                    trackPerformance: true
+                });
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+</head>
+
+<body>
+    <h1>监控插件测试页面</h1>
+    <p>这是一个测试页面，用于验证监控插件是否正常工作。</p>
+
+    <h2>测试功能</h2>
+    <button onclick="testClick()">测试点击事件</button>
+    <button onclick="testError()" class="error-btn">测试错误捕获</button>
+    <button onclick="testCustomEvent()">测试自定义事件</button>
+
+    <h2>说明</h2>
+    <ol>
+        <li>请先在前端面板创建项目并获取项目 Key</li>
+        <li>将上面的 YOUR_PROJECT_KEY_HERE 替换为你的项目 Key</li>
+        <li>确保后端服务运行在 http://localhost:3001</li>
+        <li>确保前端服务运行在 http://localhost:3000</li>
+        <li>打开此页面，点击上面的按钮测试各种功能</li>
+        <li>在前端面板查看收集到的数据</li>
+    </ol>
+
+    <script>
+        function testClick() {
+            alert('点击事件已触发，请在前端面板查看数据');
+        }
+
+        function testError() {
+            // 故意触发一个错误
+            throw new Error('这是一个测试错误');
+        }
+
+        function testCustomEvent() {
+            if (window.WebPageMonitoring) {
+                window.WebPageMonitoring.track('custom', {
+                    action: 'test',
+                    message: '这是一个自定义事件'
+                });
+                alert('自定义事件已发送');
+            } else {
+                alert('监控插件未加载');
+            }
+        }
+    </script>
+</body>
+
+</html>
