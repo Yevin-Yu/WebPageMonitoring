@@ -1,0 +1,29 @@
+{
+  "name": "web-page-monitoring",
+  "version": "1.0.0",
+  "description": "前端页面统计监控系统",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "sdk"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:backend && npm run install:frontend && npm run install:sdk",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:sdk": "cd sdk && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:sdk": "cd sdk && npm run build"
+  },
+  "keywords": [
+    "monitoring",
+    "analytics",
+    "statistics"
+  ],
+  "author": "",
+  "license": "MIT"
+}

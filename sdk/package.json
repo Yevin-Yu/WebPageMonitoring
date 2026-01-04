@@ -1,0 +1,23 @@
+{
+  "name": "web-monitoring-sdk",
+  "version": "1.0.0",
+  "description": "Web Page Monitoring SDK - 轻量级前端数据采集SDK",
+  "main": "dist/sdk.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "analytics",
+    "monitoring",
+    "tracking"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.11",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.6"
+  }
+}
